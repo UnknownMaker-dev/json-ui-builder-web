@@ -104,6 +104,14 @@ export const useEditorStore = defineStore("editor", () => {
         width: type === "panel" ? 200 : 100,
         height: type === "panel" ? 200 : 40,
         text: type === "label" || type === "button" ? name : undefined,
+        // Valores padrão de textura para testes (ajuste os caminhos conforme sua pasta public)
+        texture:
+          type === "panel"
+            ? "/presets/textures/other_ore-ui_style/default.png"
+            : type === "button"
+              ? "/presets/textures/other_ore-ui_style/default.png"
+              : undefined,
+        nineslice: type === "panel" || type === "button" ? 4 : undefined,
       },
       children: [],
     };

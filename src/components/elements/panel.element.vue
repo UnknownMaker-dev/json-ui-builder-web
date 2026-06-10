@@ -1,14 +1,28 @@
 <script setup lang="ts">
-import type { UIElement } from "../../stores/editor.store";
+import { computed } from 'vue'
+import type { UIElement } from '../../stores/editor.store'
 
-defineProps<{
-  element: UIElement;
-}>();
+const props = defineProps<{ element: UIElement }>()
+
+const ninesliceStyle = computed(() => {
+  const tex = props.element.properties.texture
+  const slice = props.element.properties.nineslice
+
+  if (!tex) return {} // Se não tiver textura, usa o CSS padrão
+
+  return {
+    borderStyle: 'solid',
+    borderImageSource: `url(${tex})`,
+    borderImageSlice: `${slice} fill`, // 'fill' garante que o centro da imagem seja renderizado
+    borderImageWidth: `${slice}px`,
+    borderImageRepeat: 'stretch',
+    backgroundColor: 'transparent' // Remove o fundo cinza padrão
+  }
+})
 </script>
 
 <template>
-  <div class="mc-panel">
-    <!-- Futuramente aqui entrará a lógica do NineSlice para a textura do painel -->
+  <div class="mc-panel" :style="ninesliceStyle">
     <slot></slot>
   </div>
 </template>
@@ -17,13 +31,8 @@ defineProps<{
 .mc-panel {
   width: 100%;
   height: 100%;
-  background-color: rgba(
-    198,
-    198,
-    198,
-    0.8
-  ); /* Cor provisória estilo painel clássico */
-  border: 2px solid #555;
+  background-color: rgba(198, 198, 198, 0.8); /* Fundo de fallback */
+  border: 2px solid #555; /* Borda de fallback */
   position: relative;
 }
 </style>
