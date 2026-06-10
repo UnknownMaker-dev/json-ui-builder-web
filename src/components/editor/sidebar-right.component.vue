@@ -59,6 +59,37 @@ const handleDelete = () => {
         />
       </div>
 
+      <div
+        class="property-group"
+        v-if="
+          editorStore.selectedElement.type === 'panel' ||
+          editorStore.selectedElement.type === 'button'
+        "
+      >
+        <label>Textura (Caminho)</label>
+        <input
+          type="text"
+          v-model="editorStore.selectedElement.properties.texture"
+          @change="editorStore.saveSnapshot()"
+          placeholder="/presets/textures/..."
+        />
+      </div>
+
+      <div
+        class="property-group"
+        v-if="
+          editorStore.selectedElement.type === 'panel' ||
+          editorStore.selectedElement.type === 'button'
+        "
+      >
+        <label>NineSlice (px)</label>
+        <input
+          type="number"
+          v-model.number="editorStore.selectedElement.properties.nineslice"
+          @change="editorStore.saveSnapshot()"
+        />
+      </div>
+
       <div class="property-row">
         <div class="property-group">
           <label>X (px)</label>
