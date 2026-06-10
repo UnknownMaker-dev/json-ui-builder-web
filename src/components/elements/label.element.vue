@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="mc-label">
+  <div class="mc-label mc-font">
     {{ element.properties.text }}
   </div>
 </template>
@@ -20,6 +20,7 @@ defineProps<{
   display: flex;
   align-items: center;
   justify-content: center;
-  text-shadow: 1px 1px 0 #3f3f3f; /* Sombra clássica de texto do MC */
+  font-size: 16px;
+  text-shadow: 1px 1px 0 #3f3f3f;
 }
 </style>

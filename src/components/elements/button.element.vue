@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-  <button class="mc-button">
+  <button class="mc-button mc-font">
     {{ element.properties.text }}
   </button>
 </template>
@@ -16,12 +16,13 @@ defineProps<{
 .mc-button {
   width: 100%;
   height: 100%;
-  background-color: #3c8527; /* Cor provisória estilo botão verde do MC */
+  background-color: #3c8527;
   color: white;
   border: 2px solid #1e4d12;
-  font-family: sans-serif; /* Mudaremos para a fonte do MC depois */
-  cursor: inherit; /* Herda o cursor grab do pai */
+  cursor: inherit;
   outline: none;
+  font-size: 16px; /* Ajuste conforme necessário */
+  text-shadow: 1px 1px 0 #1e4d12; /* Sombra clássica de texto em botões */
 }
 .mc-button:hover {
   background-color: #4a9e32;
