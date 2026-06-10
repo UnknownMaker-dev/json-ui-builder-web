@@ -7,7 +7,6 @@ const editorStore = useEditorStore();
 
 // Listener para deletar com o teclado
 const handleKeyDown = (event: KeyboardEvent) => {
-  // Evita acionar atalhos se o usuário estiver digitando em um input
   if (document.activeElement?.tagName === "INPUT") return;
 
   // Deletar
@@ -30,7 +29,18 @@ const handleKeyDown = (event: KeyboardEvent) => {
   ) {
     editorStore.redo();
   }
+
+  // Copiar (Ctrl + C)
+  if (event.ctrlKey && event.key.toLowerCase() === "c") {
+    editorStore.copyElement();
+  }
+
+  // Colar (Ctrl + V)
+  if (event.ctrlKey && event.key.toLowerCase() === "v") {
+    editorStore.pasteElement();
+  }
 };
+
 onMounted(() => {
   window.addEventListener("keydown", handleKeyDown);
 });
