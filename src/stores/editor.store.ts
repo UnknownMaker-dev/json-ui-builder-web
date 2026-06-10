@@ -33,14 +33,25 @@ export const useEditorStore = defineStore("editor", () => {
     return findElement(elements.value);
   });
 
-  // Nova função de adicionar com valores padrão
+  // Função auxiliar para encontrar o pai de um elemento
+  function findParent(nodes: UIElement[], targetId: string): UIElement | null {
+    for (const node of nodes) {
+      if (node.children.some((c) => c.id === targetId)) return node;
+      if (node.children.length > 0) {
+        const found = findParent(node.children, targetId);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
   function addElement(type: UIElement["type"], name: string) {
     const newElement: UIElement = {
       id: crypto.randomUUID(),
       type,
       name,
       properties: {
-        x: 20, // Posição relativa ao pai
+        x: 20,
         y: 20,
         width: type === "panel" ? 200 : 100,
         height: type === "panel" ? 200 : 40,
@@ -49,11 +60,21 @@ export const useEditorStore = defineStore("editor", () => {
       children: [],
     };
 
-    // Se houver um elemento selecionado e ele for um painel, adiciona como filho
-    if (selectedElement.value && selectedElement.value.type === "panel") {
-      selectedElement.value.children.push(newElement);
+    let targetParent = null;
+
+    if (selectedElement.value) {
+      if (selectedElement.value.type === "panel") {
+        // Se um painel estiver selecionado, adiciona dentro dele
+        targetParent = selectedElement.value;
+      } else {
+        // Se um botão/label estiver selecionado, acha o painel pai dele e adiciona lá
+        targetParent = findParent(elements.value, selectedElement.value.id);
+      }
+    }
+
+    if (targetParent && targetParent.type === "panel") {
+      targetParent.children.push(newElement);
     } else {
-      // Caso contrário, adiciona na raiz do projeto
       elements.value.push(newElement);
     }
 
