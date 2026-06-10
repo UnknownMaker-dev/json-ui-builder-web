@@ -85,11 +85,35 @@ export const useEditorStore = defineStore("editor", () => {
     selectedElementId.value = id;
   }
 
+  // Função para deletar um elemento e todos os seus filhos
+  function deleteElement(id: string) {
+    // Função recursiva para buscar e remover o elemento da árvore
+    const removeNode = (nodes: UIElement[]): boolean => {
+      const index = nodes.findIndex((n) => n.id === id);
+      if (index !== -1) {
+        nodes.splice(index, 1);
+        return true;
+      }
+      for (const node of nodes) {
+        if (removeNode(node.children)) return true;
+      }
+      return false;
+    };
+
+    removeNode(elements.value);
+
+    // Se o elemento deletado era o que estava selecionado, limpa a seleção
+    if (selectedElementId.value === id) {
+      selectedElementId.value = null;
+    }
+  }
+
   return {
     elements,
     selectedElementId,
     selectedElement,
     addElement,
     selectElement,
+    deleteElement,
   };
 });
