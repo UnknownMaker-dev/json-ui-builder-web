@@ -150,6 +150,61 @@ export const useEditorStore = defineStore("editor", () => {
     selectedElementId.value = id;
   }
 
+  // --- SISTEMA DE COPIAR E COLAR ---
+  const clipboard = ref<UIElement | null>(null);
+
+  function copyElement() {
+    if (selectedElement.value) {
+      // Faz uma cópia profunda do elemento selecionado para a área de transferência
+      clipboard.value = JSON.parse(JSON.stringify(selectedElement.value));
+    }
+  }
+
+  // Função recursiva para gerar novos IDs para o elemento e todos os seus filhos
+  function regenerateIds(element: UIElement): UIElement {
+    const newElement = { ...element, id: crypto.randomUUID() };
+    newElement.children = newElement.children.map((child) =>
+      regenerateIds(child),
+    );
+    return newElement;
+  }
+
+  function pasteElement() {
+    if (!clipboard.value) return;
+
+    // Clona o elemento da área de transferência e gera novos IDs
+    const clonedElement = regenerateIds(
+      JSON.parse(JSON.stringify(clipboard.value)),
+    );
+
+    // Desloca a posição levemente (+10px) para não colar exatamente em cima do original
+    clonedElement.properties.x += 10;
+    clonedElement.properties.y += 10;
+
+    // Adiciona um sufixo ao nome para identificar que é uma cópia
+    clonedElement.name = `${clonedElement.name} (Cópia)`;
+
+    // Lógica para decidir onde colar (mesma lógica do addElement)
+    let targetParent = null;
+    if (selectedElement.value) {
+      if (selectedElement.value.type === "panel") {
+        targetParent = selectedElement.value;
+      } else {
+        targetParent = findParent(elements.value, selectedElement.value.id);
+      }
+    }
+
+    if (targetParent && targetParent.type === "panel") {
+      targetParent.children.push(clonedElement);
+    } else {
+      elements.value.push(clonedElement);
+    }
+
+    // Seleciona o novo elemento colado e salva no histórico
+    selectElement(clonedElement.id);
+    saveSnapshot();
+  }
+
   return {
     elements,
     selectedElementId,
@@ -159,6 +214,8 @@ export const useEditorStore = defineStore("editor", () => {
     selectElement,
     saveSnapshot,
     undo,
-    redo, // Exportando as novas funções
+    redo,
+    copyElement,
+    pasteElement,
   };
 });
