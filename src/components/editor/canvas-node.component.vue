@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useEditorStore, type UIElement } from "../../stores/editor.store";
-import PanelElement from "../elements/panel.element.vue";
-import ButtonElement from "../elements/button.element.vue";
-import LabelElement from "../elements/label.element.vue";
+import PanelElement from "../elements/panel.component.vue";
+import ButtonElement from "../elements/button.component.vue";
+import LabelElement from "../elements/label.component.vue";
 import CanvasNode from "./canvas-node.component.vue";
 
 const props = defineProps<{ element: UIElement }>();
