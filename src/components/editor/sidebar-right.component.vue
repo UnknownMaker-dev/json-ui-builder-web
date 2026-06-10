@@ -8,11 +8,73 @@ const editorStore = useEditorStore();
   <aside class="sidebar-right">
     <h2>Propriedades</h2>
 
-    <div v-if="editorStore.selectedElement">
-      <p><strong>ID:</strong> {{ editorStore.selectedElement.id }}</p>
-      <p><strong>Tipo:</strong> {{ editorStore.selectedElement.type }}</p>
-      <!-- Aqui virão os inputs para editar tamanho, cor, texto, etc -->
+    <div v-if="editorStore.selectedElement" class="properties-panel">
+      <div class="property-group">
+        <label>ID</label>
+        <input
+          type="text"
+          :value="editorStore.selectedElement.id"
+          disabled
+          class="disabled-input"
+        />
+      </div>
+
+      <div class="property-group">
+        <label>Tipo</label>
+        <input
+          type="text"
+          :value="editorStore.selectedElement.type"
+          disabled
+          class="disabled-input"
+        />
+      </div>
+
+      <div
+        class="property-group"
+        v-if="editorStore.selectedElement.properties.text !== undefined"
+      >
+        <label>Texto</label>
+        <input
+          type="text"
+          v-model="editorStore.selectedElement.properties.text"
+        />
+      </div>
+
+      <div class="property-row">
+        <div class="property-group">
+          <label>X</label>
+          <input
+            type="number"
+            v-model.number="editorStore.selectedElement.properties.x"
+          />
+        </div>
+        <div class="property-group">
+          <label>Y</label>
+          <input
+            type="number"
+            v-model.number="editorStore.selectedElement.properties.y"
+          />
+        </div>
+      </div>
+
+      <div class="property-row">
+        <div class="property-group">
+          <label>Largura</label>
+          <input
+            type="number"
+            v-model.number="editorStore.selectedElement.properties.width"
+          />
+        </div>
+        <div class="property-group">
+          <label>Altura</label>
+          <input
+            type="number"
+            v-model.number="editorStore.selectedElement.properties.height"
+          />
+        </div>
+      </div>
     </div>
+
     <div v-else class="no-selection">
       <p>Nenhum elemento selecionado.</p>
     </div>
@@ -31,9 +93,50 @@ h2 {
   font-size: 1rem;
   margin-bottom: 1rem;
   color: #cccccc;
+  border-bottom: 1px solid #3e3e42;
+  padding-bottom: 0.5rem;
+}
+.properties-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.property-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+.property-row {
+  display: flex;
+  gap: 0.5rem;
+}
+label {
+  font-size: 0.8rem;
+  color: #aaaaaa;
+}
+input {
+  background-color: #3c3c3c;
+  border: 1px solid #555;
+  color: #fff;
+  padding: 0.4rem;
+  border-radius: 3px;
+  font-size: 0.9rem;
+  width: 100%;
+}
+input:focus {
+  outline: none;
+  border-color: #007acc;
+}
+.disabled-input {
+  background-color: #2d2d2d;
+  color: #777;
+  cursor: not-allowed;
 }
 .no-selection {
   color: #666666;
   font-size: 0.9rem;
+  text-align: center;
+  margin-top: 2rem;
 }
 </style>
