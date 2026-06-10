@@ -1,17 +1,24 @@
-import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 
 export interface UIElement {
   id: string;
-  type: "button" | "panel" | "label" | "canvas" | "stackPanel";
+  type: 'button' | 'panel' | 'label' | 'canvas' | 'stackPanel';
   name: string;
-  properites: Record<string, any>;
+  properties: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    text?: string;
+    [key: string]: any;
+  };
   children: UIElement[];
 }
 
-export const useEditorStore = defineStore("editor", () => {
-  const elements = ref<UIElement[]>([]);
-  const selectedElementId = ref<string | null>(null);
+export const useEditorStore = defineStore('editor', () => {
+  const elements = ref<UIElement[]>([])
+  const selectedElementId = ref<string | null>(null)
 
   const selectedElement = computed(() => {
     const findElement = (nodes: UIElement[]): UIElement | undefined => {
@@ -24,26 +31,37 @@ export const useEditorStore = defineStore("editor", () => {
       }
     };
     return findElement(elements.value);
-  });
+  })
 
-  // AÇÕES (Actions)
-  function addElement(element: UIElement, parentId: string | null = null) {
-    if (!parentId) {
-      elements.value.push(element);
-    } else {
-        // dps faço saporra
+  // Nova função de adicionar com valores padrão
+  function addElement(type: UIElement['type'], name: string) {
+    const newElement: UIElement = {
+      id: crypto.randomUUID(), // Gera um ID único
+      type,
+      name,
+      properties: {
+        x: 50, // Posição inicial X
+        y: 50, // Posição inicial Y
+        width: type === 'panel' ? 200 : 100,
+        height: type === 'panel' ? 200 : 40,
+        text: type === 'label' || type === 'button' ? name : undefined
+      },
+      children: []
     }
+    elements.value.push(newElement)
+    // Seleciona o elemento recém-criado
+    selectElement(newElement.id)
   }
 
   function selectElement(id: string | null) {
-    selectedElementId.value = id;
+    selectedElementId.value = id
   }
 
-  return {
-    elements,
-    selectedElementId,
-    selectedElement,
-    addElement,
-    selectElement,
-  };
-});
+  return { 
+    elements, 
+    selectedElementId, 
+    selectedElement, 
+    addElement, 
+    selectElement 
+  }
+})

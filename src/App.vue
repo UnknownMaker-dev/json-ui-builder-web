@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import sidebarleftComponent from "./components/editor/sidebarleft.component.vue";
-import sidebarrightComponent from "./components/editor/sidebarright.component.vue";
-import canvasareaComponent from "./components/editor/canvasarea.component.vue";
+import sidebarleftComponent from "./components/editor/sidebar-left.component.vue";
+import sidebarrightComponent from "./components/editor/sidebar-right.component.vue";
+import canvasareaComponent from "./components/editor/canvas-area.component.vue";
 </script>
 
 <template>
