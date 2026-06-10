@@ -5,6 +5,9 @@ import PanelElement from "../elements/panel.element.vue";
 import ButtonElement from "../elements/button.element.vue";
 import LabelElement from "../elements/label.element.vue";
 
+// CORREÇÃO: Importando a si mesmo para a recursão funcionar perfeitamente!
+import CanvasNode from "./canvas-node.component.vue";
+
 const props = defineProps<{ element: UIElement }>();
 const editorStore = useEditorStore();
 
@@ -60,7 +63,7 @@ const stopDrag = () => {
     @mousedown.stop="startDrag"
   >
     <component :is="elementComponents[element.type]" :element="element">
-      <!-- Renderiza os filhos DENTRO do componente atual -->
+      <!-- Agora o Vue sabe exatamente quem é o CanvasNode -->
       <CanvasNode
         v-for="child in element.children"
         :key="child.id"
