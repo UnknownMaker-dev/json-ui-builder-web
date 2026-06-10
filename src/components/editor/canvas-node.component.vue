@@ -45,11 +45,13 @@ const onDrag = (event: MouseEvent) => {
 };
 
 const stopDrag = () => {
-  isDragging.value = false;
-  window.removeEventListener("mousemove", onDrag);
-  window.removeEventListener("mouseup", stopDrag);
+  if (isDragging.value) {
+    isDragging.value = false;
+    window.removeEventListener("mousemove", onDrag);
+    window.removeEventListener("mouseup", stopDrag);
+    editorStore.saveSnapshot(); // <-- ADICIONADO AQUI
+  }
 };
-
 // --- LÓGICA DE RESIZE (Redimensionar) ---
 const isResizing = ref(false);
 const currentHandle = ref("");
@@ -111,9 +113,12 @@ const onResize = (event: MouseEvent) => {
 };
 
 const stopResize = () => {
-  isResizing.value = false;
-  window.removeEventListener("mousemove", onResize);
-  window.removeEventListener("mouseup", stopResize);
+  if (isResizing.value) {
+    isResizing.value = false;
+    window.removeEventListener("mousemove", onResize);
+    window.removeEventListener("mouseup", stopResize);
+    editorStore.saveSnapshot(); // <-- ADICIONADO AQUI
+  }
 };
 </script>
 

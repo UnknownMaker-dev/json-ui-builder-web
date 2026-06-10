@@ -7,18 +7,30 @@ const editorStore = useEditorStore();
 
 // Listener para deletar com o teclado
 const handleKeyDown = (event: KeyboardEvent) => {
-  // Verifica se a tecla é Delete ou Backspace e se há um elemento selecionado
+  // Evita acionar atalhos se o usuário estiver digitando em um input
+  if (document.activeElement?.tagName === "INPUT") return;
+
+  // Deletar
   if (
     (event.key === "Delete" || event.key === "Backspace") &&
     editorStore.selectedElementId
   ) {
-    // Evita deletar se o usuário estiver digitando em um input (como no painel de propriedades)
-    if (document.activeElement?.tagName === "INPUT") return;
-
     editorStore.deleteElement(editorStore.selectedElementId);
   }
-};
 
+  // Desfazer (Ctrl + Z)
+  if (event.ctrlKey && event.key.toLowerCase() === "z" && !event.shiftKey) {
+    editorStore.undo();
+  }
+
+  // Refazer (Ctrl + Y ou Ctrl + Shift + Z)
+  if (
+    (event.ctrlKey && event.key.toLowerCase() === "y") ||
+    (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "z")
+  ) {
+    editorStore.redo();
+  }
+};
 onMounted(() => {
   window.addEventListener("keydown", handleKeyDown);
 });
