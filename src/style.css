@@ -1,0 +1,58 @@
+/* Importação das Fontes do Minecraft */
+@font-face {
+  font-family: 'Minecraft';
+  src: url('/fonts/MinecraftRegular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Minecraft';
+  src: url('/fonts/MinecraftBold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Minecraft';
+  src: url('/fonts/MinecraftItalic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Minecraft';
+  src: url('/fonts/MinecraftBoldItalic.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'MinecraftTen';
+  src: url('/fonts/MinecraftTen.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Reset Básico e Estilos Globais */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  /* A interface do editor usa uma fonte normal, mas os elementos do canvas usarão a fonte do jogo */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0e0e0;
+  background-color: #1e1e1e;
+  overflow: hidden;
+}
+
+/* Classe utilitária para aplicar a fonte do jogo onde for necessário */
+.mc-font {
+  font-family: 'Minecraft', sans-serif;
+  /* O Minecraft usa renderização pixelada para fontes */
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
