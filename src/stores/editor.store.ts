@@ -20,6 +20,55 @@ export const useEditorStore = defineStore("editor", () => {
   const elements = ref<UIElement[]>([]);
   const selectedElementId = ref<string | null>(null);
 
+  // --- SISTEMA DE HISTÓRICO (UNDO/REDO) ---
+  const history = ref<string[]>([]);
+  const historyIndex = ref(-1);
+  let isUndoRedo = false; // Flag para evitar salvar snapshot enquanto desfaz
+
+  function saveSnapshot() {
+    if (isUndoRedo) return;
+
+    const snapshot = JSON.stringify(elements.value);
+
+    // Evita salvar snapshots duplicados seguidos
+    if (
+      historyIndex.value >= 0 &&
+      history.value[historyIndex.value] === snapshot
+    )
+      return;
+
+    // Se o usuário desfez algumas ações e fez uma nova, apaga o "futuro" (redos)
+    if (historyIndex.value < history.value.length - 1) {
+      history.value = history.value.slice(0, historyIndex.value + 1);
+    }
+
+    history.value.push(snapshot);
+    historyIndex.value++;
+  }
+
+  function undo() {
+    if (historyIndex.value > 0) {
+      isUndoRedo = true;
+      historyIndex.value--;
+      elements.value = JSON.parse(history.value[historyIndex.value]);
+      isUndoRedo = false;
+    }
+  }
+
+  function redo() {
+    if (historyIndex.value < history.value.length - 1) {
+      isUndoRedo = true;
+      historyIndex.value++;
+      elements.value = JSON.parse(history.value[historyIndex.value]);
+      isUndoRedo = false;
+    }
+  }
+
+  // Salva o estado inicial vazio
+  saveSnapshot();
+
+  // --- FIM DO SISTEMA DE HISTÓRICO ---
+
   const selectedElement = computed(() => {
     const findElement = (nodes: UIElement[]): UIElement | undefined => {
       for (const node of nodes) {
@@ -33,7 +82,6 @@ export const useEditorStore = defineStore("editor", () => {
     return findElement(elements.value);
   });
 
-  // Função auxiliar para encontrar o pai de um elemento
   function findParent(nodes: UIElement[], targetId: string): UIElement | null {
     for (const node of nodes) {
       if (node.children.some((c) => c.id === targetId)) return node;
@@ -61,13 +109,10 @@ export const useEditorStore = defineStore("editor", () => {
     };
 
     let targetParent = null;
-
     if (selectedElement.value) {
       if (selectedElement.value.type === "panel") {
-        // Se um painel estiver selecionado, adiciona dentro dele
         targetParent = selectedElement.value;
       } else {
-        // Se um botão/label estiver selecionado, acha o painel pai dele e adiciona lá
         targetParent = findParent(elements.value, selectedElement.value.id);
       }
     }
@@ -79,15 +124,10 @@ export const useEditorStore = defineStore("editor", () => {
     }
 
     selectElement(newElement.id);
+    saveSnapshot(); // Salva após adicionar
   }
 
-  function selectElement(id: string | null) {
-    selectedElementId.value = id;
-  }
-
-  // Função para deletar um elemento e todos os seus filhos
   function deleteElement(id: string) {
-    // Função recursiva para buscar e remover o elemento da árvore
     const removeNode = (nodes: UIElement[]): boolean => {
       const index = nodes.findIndex((n) => n.id === id);
       if (index !== -1) {
@@ -101,11 +141,13 @@ export const useEditorStore = defineStore("editor", () => {
     };
 
     removeNode(elements.value);
+    if (selectedElementId.value === id) selectedElementId.value = null;
 
-    // Se o elemento deletado era o que estava selecionado, limpa a seleção
-    if (selectedElementId.value === id) {
-      selectedElementId.value = null;
-    }
+    saveSnapshot(); // Salva após deletar
+  }
+
+  function selectElement(id: string | null) {
+    selectedElementId.value = id;
   }
 
   return {
@@ -113,7 +155,10 @@ export const useEditorStore = defineStore("editor", () => {
     selectedElementId,
     selectedElement,
     addElement,
-    selectElement,
     deleteElement,
+    selectElement,
+    saveSnapshot,
+    undo,
+    redo, // Exportando as novas funções
   };
 });
