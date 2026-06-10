@@ -1,14 +1,20 @@
 <script setup lang="ts">
-// Aqui ficará a lista de elementos (botões, painéis) para arrastar ou clicar
+import { useEditorStore } from '../../stores/editor.store'
+
+const editorStore = useEditorStore()
+
+const handleAddElement = (type: 'button' | 'panel' | 'label', name: string) => {
+  editorStore.addElement(type, name)
+}
 </script>
 
 <template>
   <aside class="sidebar-left">
     <h2>Elementos</h2>
     <ul>
-      <li>Button</li>
-      <li>Panel</li>
-      <li>Label</li>
+      <li @click="handleAddElement('panel', 'Novo Painel')">📦 Panel</li>
+      <li @click="handleAddElement('button', 'Novo Botão')">🔘 Button</li>
+      <li @click="handleAddElement('label', 'Novo Texto')">📝 Label</li>
     </ul>
   </aside>
 </template>
@@ -36,6 +42,7 @@ li {
   margin-bottom: 0.5rem;
   cursor: pointer;
   border-radius: 4px;
+  user-select: none;
 }
 li:hover {
   background-color: #094771;
