@@ -1,50 +1,51 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useEditorStore } from "../../stores/editor.store";
+
+// Importando os componentes específicos
+import PanelElement from "../elements/panel.element.vue";
+import ButtonElement from "../elements/button.element.vue";
+import LabelElement from "../elements/label.element.vue";
 
 const editorStore = useEditorStore();
 
-// Variáveis de estado para o Drag & Drop
+// Mapeamento dinâmico dos componentes
+const elementComponents: Record<string, any> = {
+  panel: PanelElement,
+  button: ButtonElement,
+  label: LabelElement,
+};
+
+// --- Lógica de Drag & Drop (Mantida igual) ---
 const isDragging = ref(false);
 const startMouseX = ref(0);
 const startMouseY = ref(0);
 const initialElementX = ref(0);
 const initialElementY = ref(0);
 
-// Inicia o arrasto
 const startDrag = (event: MouseEvent, id: string) => {
-  // Seleciona o elemento clicado
   editorStore.selectElement(id);
-
   const el = editorStore.selectedElement;
   if (!el) return;
 
-  // Registra as posições iniciais
   isDragging.value = true;
   startMouseX.value = event.clientX;
   startMouseY.value = event.clientY;
   initialElementX.value = el.properties.x;
   initialElementY.value = el.properties.y;
 
-  // Adiciona os listeners no window para continuar arrastando mesmo se o mouse sair de cima do elemento
   window.addEventListener("mousemove", onDrag);
   window.addEventListener("mouseup", stopDrag);
 };
 
-// Executa enquanto o mouse se move
 const onDrag = (event: MouseEvent) => {
   if (!isDragging.value || !editorStore.selectedElement) return;
-
-  // Calcula a diferença (delta) de onde o mouse começou até onde está agora
   const deltaX = event.clientX - startMouseX.value;
   const deltaY = event.clientY - startMouseY.value;
-
-  // Atualiza a posição do elemento na Store
   editorStore.selectedElement.properties.x = initialElementX.value + deltaX;
   editorStore.selectedElement.properties.y = initialElementY.value + deltaY;
 };
 
-// Para o arrasto
 const stopDrag = () => {
   isDragging.value = false;
   window.removeEventListener("mousemove", onDrag);
@@ -59,11 +60,11 @@ const stopDrag = () => {
         O canvas está vazio. Adicione um elemento.
       </p>
 
-      <!-- Renderização dos Elementos -->
+      <!-- Renderização Dinâmica dos Elementos -->
       <div
         v-for="el in editorStore.elements"
         :key="el.id"
-        class="canvas-element"
+        class="canvas-element-wrapper"
         :class="{ 'is-selected': editorStore.selectedElementId === el.id }"
         :style="{
           left: el.properties.x + 'px',
@@ -73,7 +74,8 @@ const stopDrag = () => {
         }"
         @mousedown.stop="startDrag($event, el.id)"
       >
-        {{ el.properties.text || el.type }}
+        <!-- O Vue decide qual componente renderizar baseado no el.type -->
+        <component :is="elementComponents[el.type]" :element="el" />
       </div>
     </div>
   </main>
@@ -103,27 +105,22 @@ const stopDrag = () => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  pointer-events: none; /* Evita que o texto interfira no clique do canvas */
+  pointer-events: none;
 }
 
-.canvas-element {
+/* O wrapper agora controla a posição e o tamanho, o componente interno preenche 100% */
+.canvas-element-wrapper {
   position: absolute;
-  background-color: #555;
-  border: 1px solid #777;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab; /* Muda o cursor para indicar que é arrastável */
+  cursor: grab;
   user-select: none;
 }
 
-.canvas-element:active {
-  cursor: grabbing; /* Cursor muda ao segurar */
+.canvas-element-wrapper:active {
+  cursor: grabbing;
 }
 
-.canvas-element.is-selected {
-  border: 2px solid #007acc;
+.canvas-element-wrapper.is-selected {
+  outline: 2px solid #007acc; /* Usando outline em vez de border para não alterar o tamanho real */
   box-shadow: 0 0 5px #007acc;
   z-index: 10;
 }
