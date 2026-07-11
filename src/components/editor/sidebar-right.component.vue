@@ -80,18 +80,15 @@ const stateLabels: Record<string, string> = {
               <option v-for="f in MINECRAFT_FONTS" :key="f" :value="f">{{ f }}</option>
             </select>
           </div>
-          <div class="field" v-if="el.type === 'button'">
+          <div class="field">
             <PropSlider
               label="Tam. fonte"
               :min="0.5"
-              :max="5"
+              :max="8"
               :step="0.1"
               v-model="el.properties.fontSize"
               @change="save"
             />
-          </div>
-          <div class="field hint" v-else>
-            <span>Texto ajusta à caixa (fit)</span>
           </div>
         </div>
         <div class="row">
@@ -162,11 +159,14 @@ const stateLabels: Record<string, string> = {
       </div>
 
       <div class="group">
-        <span class="group-title">Posição & Tamanho</span>
+        <span class="group-title">
+          Posição & Tamanho
+          <em v-if="el.type === 'label'" class="derived">tamanho segue a fonte</em>
+        </span>
         <PropSlider label="X" unit="px" :min="0" :max="800" v-model="el.properties.x" @change="save" />
         <PropSlider label="Y" unit="px" :min="0" :max="600" v-model="el.properties.y" @change="save" />
-        <PropSlider label="Largura" unit="px" :min="1" :max="800" v-model="el.properties.width" @change="save" />
-        <PropSlider label="Altura" unit="px" :min="1" :max="600" v-model="el.properties.height" @change="save" />
+        <PropSlider label="Largura" unit="px" :min="1" :max="800" v-model="el.properties.width" :disabled="el.type === 'label'" @change="save" />
+        <PropSlider label="Altura" unit="px" :min="1" :max="600" v-model="el.properties.height" :disabled="el.type === 'label'" @change="save" />
       </div>
 
       <button class="collapse-btn" @click="showBindings = !showBindings">
@@ -368,6 +368,17 @@ select:focus {
   letter-spacing: 0.6px;
   color: var(--text-faint);
   font-family: var(--font-mono);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.derived {
+  text-transform: none;
+  letter-spacing: 0;
+  font-style: italic;
+  color: var(--accent);
+  font-size: 10px;
 }
 .group .field input {
   background: var(--surface);
