@@ -199,7 +199,7 @@ const stopResize = () => {
   cursor: grabbing;
 }
 .canvas-element-wrapper.is-selected {
-  outline: 2px solid #007acc;
+  outline: 2px solid var(--accent);
   z-index: 10;
 }
 
@@ -209,7 +209,7 @@ const stopResize = () => {
   width: 8px;
   height: 8px;
   background-color: #ffffff;
-  border: 1px solid #007acc;
+  border: 1px solid var(--accent);
   z-index: 20;
 }
 

@@ -36,18 +36,21 @@ const labels: Record<string, string> = {
   width: 100%;
   height: 100%;
   position: relative;
-  outline: 1px dashed rgba(120, 170, 255, 0.5);
-  background-color: rgba(120, 170, 255, 0.06);
+  outline: 1px dashed rgba(129, 140, 248, 0.55);
+  background-color: rgba(99, 102, 241, 0.07);
+  border-radius: 2px;
 }
 .container-tag {
   position: absolute;
-  top: 2px;
-  left: 3px;
+  top: 3px;
+  left: 4px;
   font-size: 9px;
-  letter-spacing: 0.5px;
-  color: rgba(160, 200, 255, 0.8);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: rgba(165, 173, 250, 0.9);
   pointer-events: none;
   z-index: 1;
+  font-family: var(--font-mono, monospace);
 }
 .content-slot {
   position: absolute;

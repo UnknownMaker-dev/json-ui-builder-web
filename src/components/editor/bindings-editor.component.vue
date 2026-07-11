@@ -5,6 +5,7 @@
  * é adicionado/removido/editado e salvo no array `properties.bindings`.
  */
 import { computed } from "vue";
+import { Plus, Trash2 } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
 import type { UIBinding } from "../../types/element.types";
 
@@ -35,11 +36,11 @@ const removeBinding = (i: number) => {
 <template>
   <div class="bindings">
     <div class="head">
-      <label>Bindings</label>
-      <button class="add" @click="addBinding">+ Adicionar</button>
+      <label>Bindings do elemento</label>
+      <button class="add" @click="addBinding"><Plus :size="13" /> Adicionar</button>
     </div>
 
-    <div v-if="!bindings.length" class="empty">Sem bindings.</div>
+    <div v-if="!bindings.length" class="empty">Nenhum binding.</div>
 
     <div v-for="(b, i) in bindings" :key="i" class="binding-card">
       <div class="row">
@@ -50,7 +51,7 @@ const removeBinding = (i: number) => {
           <option value="collection_details">collection_details</option>
           <option value="none">none</option>
         </select>
-        <button class="del" @click="removeBinding(i)">🗑</button>
+        <button class="del" @click="removeBinding(i)"><Trash2 :size="13" /></button>
       </div>
       <input
         v-model="b.binding_name"
@@ -85,7 +86,8 @@ const removeBinding = (i: number) => {
 .bindings {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
+  padding: 4px 0 2px;
 }
 .head {
   display: flex;
@@ -93,52 +95,71 @@ const removeBinding = (i: number) => {
   align-items: center;
 }
 label {
-  font-size: 0.8rem;
-  color: #aaa;
+  font-size: 11px;
+  color: var(--text-soft);
+  font-weight: 500;
 }
 .add {
-  background: #0e639c;
-  color: #fff;
-  border: none;
-  border-radius: 3px;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 9px;
+  font-size: 11.5px;
+  font-weight: 500;
   cursor: pointer;
 }
+.add:hover {
+  background: rgba(99, 102, 241, 0.22);
+}
 .empty {
-  color: #666;
-  font-size: 0.8rem;
+  color: var(--text-faint);
+  font-size: 12px;
   font-style: italic;
 }
 .binding-card {
-  background: #2d2d2d;
-  border: 1px solid #3e3e42;
-  border-radius: 4px;
-  padding: 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 9px;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 6px;
 }
 .row {
   display: flex;
-  gap: 0.35rem;
+  gap: 6px;
 }
 select,
 input {
-  background: #3c3c3c;
-  border: 1px solid #555;
-  color: #fff;
-  padding: 0.3rem;
-  border-radius: 3px;
-  font-size: 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
   width: 100%;
 }
+select:focus,
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
 .del {
-  background: #a12626;
-  color: #fff;
-  border: none;
-  border-radius: 3px;
+  display: grid;
+  place-items: center;
+  background: var(--danger-soft);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  padding: 0 0.5rem;
+  padding: 0 8px;
+}
+.del:hover {
+  background: rgba(239, 68, 68, 0.22);
 }
 </style>

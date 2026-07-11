@@ -24,9 +24,9 @@ import canvasareaComponent from "./components/editor/canvas-area.component.vue";
 }
 
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  color: #e0e0e0;
-  background-color: #1e1e1e;
+  font-family: var(--font-sans);
+  color: var(--text);
+  background-color: var(--bg);
   overflow: hidden; /* Evita scroll na página inteira */
 }
 

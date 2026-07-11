@@ -69,23 +69,29 @@ onUnmounted(() => {
 <style scoped>
 .canvas-area {
   flex: 1;
-  background-color: #1e1e1e;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.035) 1px, transparent 0);
+  background-size: 22px 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: auto;
-  padding: 2rem;
+  padding: 2.5rem;
 }
 .canvas-container {
   width: 800px;
   height: 600px;
-  background-color: #333333;
-  border: 2px dashed #3e3e42;
+  background-color: #2b2f3d;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: var(--shadow-lg);
   position: relative;
   overflow: hidden;
 }
 .empty-text {
-  color: #888;
+  color: var(--text-faint);
+  font-size: 13px;
   position: absolute;
   top: 50%;
   left: 50%;

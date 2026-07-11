@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * Seletor visual de texturas: mostra os presets embarcados (agrupados por
- * estilo) e as texturas enviadas pelo usuário. Permite upload local (PNG + JSON
- * de nineslice opcional). Emite o caminho da textura escolhida.
+ * Seletor visual de texturas: presets embarcados (por estilo) + texturas do
+ * usuário. Upload local (PNG + JSON de nineslice opcional).
  */
 import { ref, onMounted, computed } from "vue";
+import { Search, X, Upload, Trash2, ImageUp } from "lucide-vue-next";
 import {
   loadAllPresets,
   getCustomTextures,
@@ -47,9 +47,7 @@ const allGroups = computed(() => {
   return filtered;
 });
 
-const select = (entry: TextureEntry) => {
-  emit("update:modelValue", entry.url);
-};
+const select = (entry: TextureEntry) => emit("update:modelValue", entry.url);
 
 const onPng = (e: Event) => {
   pngInput.value = (e.target as HTMLInputElement).files?.[0] ?? null;
@@ -77,24 +75,26 @@ const styleLabel = (style: string) =>
   <div class="picker-overlay" @click.self="emit('close')">
     <div class="picker">
       <header>
-        <h3>Selecionar Textura</h3>
-        <input v-model="search" placeholder="🔍 Buscar..." class="search" />
-        <button class="close" @click="emit('close')">✕</button>
+        <h3>Selecionar textura</h3>
+        <div class="search-wrap">
+          <Search :size="15" class="search-icon" />
+          <input v-model="search" placeholder="Buscar textura..." class="search" />
+        </div>
+        <button class="close" @click="emit('close')"><X :size="18" /></button>
       </header>
 
       <div class="upload-bar">
+        <ImageUp :size="16" class="up-lead" />
         <label class="file-btn">
-          PNG
+          {{ pngInput?.name || "PNG" }}
           <input type="file" accept=".png" @change="onPng" hidden />
         </label>
-        <span class="fname">{{ pngInput?.name || "nenhum" }}</span>
-        <label class="file-btn">
-          JSON (nineslice)
+        <label class="file-btn subtle">
+          {{ jsonInput?.name || "JSON (opcional)" }}
           <input type="file" accept=".json" @change="onJson" hidden />
         </label>
-        <span class="fname">{{ jsonInput?.name || "opcional" }}</span>
         <button class="up-btn" :disabled="!pngInput" @click="doUpload">
-          ⬆ Enviar
+          <Upload :size="14" /> Enviar
         </button>
       </div>
 
@@ -111,7 +111,7 @@ const styleLabel = (style: string) =>
               :title="tex.name"
               @click="select(tex)"
             >
-              <img :src="tex.url" :alt="tex.name" />
+              <div class="tex-thumb"><img :src="tex.url" :alt="tex.name" /></div>
               <span class="tex-name">{{ tex.name }}</span>
               <span v-if="tex.nineslice" class="badge">9</span>
               <span
@@ -119,8 +119,9 @@ const styleLabel = (style: string) =>
                 class="del"
                 @click.stop="doRemove(tex)"
                 title="Remover"
-                >🗑</span
               >
+                <Trash2 :size="12" />
+              </span>
             </button>
           </div>
         </section>
@@ -133,19 +134,21 @@ const styleLabel = (style: string) =>
 .picker-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(6, 8, 14, 0.66);
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
 .picker {
-  width: 640px;
+  width: 660px;
   max-width: 92vw;
   height: 80vh;
-  background: #252526;
-  border: 1px solid #3e3e42;
-  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -153,61 +156,101 @@ const styleLabel = (style: string) =>
 header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid #3e3e42;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-soft);
 }
 header h3 {
-  font-size: 1rem;
-  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.search-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-faint);
 }
 .search {
-  flex: 1;
-  background: #3c3c3c;
-  border: 1px solid #555;
-  color: #fff;
-  padding: 0.35rem 0.5rem;
-  border-radius: 3px;
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px 8px 32px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+.search:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 .close {
-  background: none;
+  background: transparent;
   border: none;
-  color: #ccc;
-  font-size: 1.1rem;
+  color: var(--text-soft);
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+}
+.close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
 }
 .upload-bar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid #3e3e42;
-  font-size: 0.8rem;
-  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface-2);
+}
+.up-lead {
+  color: var(--text-faint);
 }
 .file-btn {
-  background: #333;
-  padding: 0.3rem 0.5rem;
-  border-radius: 3px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-}
-.file-btn:hover {
-  background: #094771;
-}
-.fname {
-  color: #888;
-  max-width: 90px;
+  font-size: 12px;
+  color: var(--text);
+  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.file-btn.subtle {
+  color: var(--text-soft);
+}
+.file-btn:hover {
+  border-color: var(--accent);
+}
 .up-btn {
-  background: #0e639c;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  background: var(--accent);
   color: #fff;
   border: none;
-  padding: 0.3rem 0.6rem;
-  border-radius: 3px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.up-btn:hover {
+  background: var(--accent-hover);
 }
 .up-btn:disabled {
   opacity: 0.4;
@@ -216,72 +259,95 @@ header h3 {
 .groups {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 14px 16px;
 }
 section h4 {
-  font-size: 0.8rem;
+  font-size: 10.5px;
   text-transform: uppercase;
-  color: #9ab;
-  margin: 0.5rem 0;
+  letter-spacing: 0.7px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  margin: 8px 0 10px;
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
 }
 .tex {
   position: relative;
-  background: #1e1e1e;
-  border: 1px solid #3e3e42;
-  border-radius: 4px;
-  padding: 0.35rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 8px 6px 6px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  gap: 6px;
+  transition: border-color 0.15s, transform 0.05s;
 }
 .tex:hover {
-  border-color: #0e639c;
+  border-color: var(--border-strong);
+}
+.tex:active {
+  transform: translateY(1px);
 }
 .tex.active {
-  border-color: #007acc;
-  box-shadow: 0 0 0 1px #007acc;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-ring);
 }
-.tex img {
-  width: 48px;
-  height: 48px;
+.tex-thumb {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  background: repeating-conic-gradient(#2a2f3e 0% 25%, #232838 0% 50%) 50% / 12px 12px;
+  border-radius: var(--radius-sm);
+}
+.tex-thumb img {
+  max-width: 44px;
+  max-height: 44px;
   object-fit: contain;
   image-rendering: pixelated;
 }
 .tex-name {
-  font-size: 0.62rem;
-  color: #bbb;
-  max-width: 72px;
+  font-size: 10px;
+  color: var(--text-soft);
+  max-width: 78px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  background: #0e639c;
+  top: 5px;
+  right: 5px;
+  background: var(--accent);
   color: #fff;
-  font-size: 0.55rem;
-  padding: 0 3px;
-  border-radius: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
 }
 .del {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  font-size: 0.7rem;
+  top: 4px;
+  left: 4px;
+  color: #f87171;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+.del:hover {
+  background: var(--danger-soft);
 }
 .loading {
-  padding: 2rem;
+  padding: 40px;
   text-align: center;
-  color: #888;
+  color: var(--text-faint);
 }
 </style>
