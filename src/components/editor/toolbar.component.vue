@@ -12,6 +12,8 @@ import {
   FileCode2,
   FolderOpen,
   BookOpen,
+  Lock,
+  Unlock,
 } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
 import { exportToJsonUiString } from "../../utils/json-ui-exporter";
@@ -93,6 +95,14 @@ const onImportFile = async (e: Event) => {
       </button>
       <button class="icon-btn" @click="editorStore.redo()" title="Refazer (Ctrl+Y)">
         <Redo2 :size="17" />
+      </button>
+      <button
+        class="icon-btn"
+        :class="{ on: editorStore.aspectLocked }"
+        @click="editorStore.toggleAspectLock()"
+        title="Manter proporção ao redimensionar (ou segure SHIFT)"
+      >
+        <component :is="editorStore.aspectLocked ? Lock : Unlock" :size="16" />
       </button>
     </div>
 
@@ -226,6 +236,10 @@ const onImportFile = async (e: Event) => {
   background: var(--surface-hover);
   color: var(--text);
 }
+.icon-btn.on {
+  background: var(--accent);
+  color: #fff;
+}
 .spacer {
   flex: 1;
 }
@@ -283,6 +297,41 @@ const onImportFile = async (e: Event) => {
 }
 .seg-item + .seg-item {
   border-left: 1px solid var(--border);
+}
+
+/* Mobile: toolbar compacta e rolável na horizontal */
+@media (max-width: 860px) {
+  .toolbar {
+    height: 50px;
+    gap: 8px;
+    padding: 0 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .toolbar::-webkit-scrollbar {
+    display: none;
+  }
+  .brand-name,
+  .divider,
+  .ns-field label {
+    display: none;
+  }
+  .ns-input {
+    width: 96px;
+  }
+  .brand,
+  .ns-field,
+  .icon-group,
+  .actions,
+  .wiki-btn {
+    flex-shrink: 0;
+  }
+  .spacer {
+    display: none;
+  }
+  .btn {
+    padding: 7px 10px;
+  }
 }
 .wiki-btn {
   color: var(--accent);
