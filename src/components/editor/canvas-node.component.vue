@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useEditorStore, type UIElement } from "../../stores/editor.store";
 import PanelElement from "../elements/panel.component.vue";
 import ButtonElement from "../elements/button.component.vue";
@@ -24,6 +24,47 @@ const bounds = () =>
     ? { w: props.parent.properties.width, h: props.parent.properties.height }
     : { w: CANVAS_W, h: CANVAS_H };
 
+// Espaçamento entre itens empilhados (px).
+const STACK_GAP = 2;
+
+/**
+ * Se este elemento é filho de um stack_panel, sua posição é DERIVADA da pilha
+ * (empilhado na direção da orientação), não do x/y livre. Retorna null caso
+ * contrário.
+ */
+const stackLayout = computed(() => {
+  const p = props.parent;
+  if (!p || p.type !== "stackPanel") return null;
+  const horizontal = p.properties.orientation === "horizontal";
+  const idx = p.children.findIndex((c) => c.id === props.element.id);
+  let main = 0;
+  for (let i = 0; i < idx; i++) {
+    const s = p.children[i].properties;
+    main += (horizontal ? s.width : s.height) + STACK_GAP;
+  }
+  return { horizontal, main };
+});
+
+/** Estilo de posição/tamanho do wrapper (usa a pilha quando aplicável). */
+const wrapperStyle = computed(() => {
+  const pr = props.element.properties;
+  const sl = stackLayout.value;
+  if (sl) {
+    return {
+      left: (sl.horizontal ? sl.main : 0) + "px",
+      top: (sl.horizontal ? 0 : sl.main) + "px",
+      width: pr.width + "px",
+      height: pr.height + "px",
+    };
+  }
+  return {
+    left: pr.x + "px",
+    top: pr.y + "px",
+    width: pr.width + "px",
+    height: pr.height + "px",
+  };
+});
+
 const elementComponents: Record<string, any> = {
   panel: PanelElement,
   button: ButtonElement,
@@ -42,6 +83,9 @@ const initialY = ref(0);
 
 // --- LÓGICA DE DRAG (Mover) ---
 const isDragging = ref(false);
+// Reordenação dentro de um stack_panel.
+const isStackDrag = ref(false);
+const stackBaseMain = ref(0);
 
 const startDrag = (event: PointerEvent) => {
   editorStore.selectElement(props.element.id);
@@ -50,6 +94,12 @@ const startDrag = (event: PointerEvent) => {
   startMouseY.value = event.clientY;
   initialX.value = props.element.properties.x;
   initialY.value = props.element.properties.y;
+
+  // Filho de stack: entra em modo "reordenar" em vez de mover livre.
+  if (stackLayout.value) {
+    isStackDrag.value = true;
+    stackBaseMain.value = stackLayout.value.main;
+  }
 
   window.addEventListener("pointermove", onDrag);
   window.addEventListener("pointerup", stopDrag);
@@ -60,6 +110,13 @@ const onDrag = (event: PointerEvent) => {
   if (!isDragging.value) return;
   const deltaX = event.clientX - startMouseX.value;
   const deltaY = event.clientY - startMouseY.value;
+
+  // Reordenação viva dentro do stack_panel.
+  if (isStackDrag.value && props.parent) {
+    reorderInStack(deltaX, deltaY);
+    return;
+  }
+
   const b = bounds();
   // Mantém o elemento dentro do container pai (0 até borda - tamanho).
   props.element.properties.x = clamp(
@@ -74,9 +131,35 @@ const onDrag = (event: PointerEvent) => {
   );
 };
 
+/** Move o elemento para o índice correspondente à posição arrastada na pilha. */
+const reorderInStack = (deltaX: number, deltaY: number) => {
+  const p = props.parent!;
+  const horizontal = p.properties.orientation === "horizontal";
+  const delta = horizontal ? deltaX : deltaY;
+  const virtual = stackBaseMain.value + delta; // posição projetada na pilha
+
+  // Encontra o índice de inserção comparando com o meio de cada vizinho.
+  const others = p.children.filter((c) => c.id !== props.element.id);
+  let pos = 0;
+  let newIndex = 0;
+  for (const o of others) {
+    const sz = horizontal ? o.properties.width : o.properties.height;
+    if (virtual < pos + sz / 2) break;
+    pos += sz + STACK_GAP;
+    newIndex++;
+  }
+
+  const cur = p.children.findIndex((c) => c.id === props.element.id);
+  if (cur !== -1 && cur !== newIndex) {
+    p.children.splice(cur, 1);
+    p.children.splice(newIndex, 0, props.element);
+  }
+};
+
 const stopDrag = () => {
   if (isDragging.value) {
     isDragging.value = false;
+    isStackDrag.value = false;
     window.removeEventListener("pointermove", onDrag);
     window.removeEventListener("pointerup", stopDrag);
     window.removeEventListener("pointercancel", stopDrag);
@@ -191,13 +274,12 @@ const stopResize = () => {
 <template>
   <div
     class="canvas-element-wrapper"
-    :class="{ 'is-selected': editorStore.selectedElementId === element.id }"
-    :style="{
-      left: element.properties.x + 'px',
-      top: element.properties.y + 'px',
-      width: element.properties.width + 'px',
-      height: element.properties.height + 'px',
+    :class="{
+      'is-selected': editorStore.selectedElementId === element.id,
+      'in-stack': !!stackLayout,
+      'is-reordering': isStackDrag,
     }"
+    :style="wrapperStyle"
     @pointerdown.stop="startDrag"
   >
     <!-- Componente Real -->
@@ -264,6 +346,19 @@ const stopResize = () => {
 .canvas-element-wrapper.is-selected {
   outline: 2px solid var(--accent);
   z-index: 10;
+}
+/* Itens empilhados deslizam suavemente ao reordenar. */
+.canvas-element-wrapper.in-stack {
+  transition:
+    left 0.16s ease,
+    top 0.16s ease;
+}
+/* O item sendo arrastado fica por cima e responde na hora (sem transição). */
+.canvas-element-wrapper.is-reordering {
+  z-index: 30;
+  transition: none;
+  cursor: grabbing;
+  filter: brightness(1.08);
 }
 
 /* Estilos dos Resize Handles */
