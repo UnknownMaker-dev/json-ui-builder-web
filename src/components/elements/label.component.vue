@@ -7,7 +7,22 @@ defineProps<{
 </script>
 
 <template>
-  <div class="mc-label mc-font">
+  <div
+    class="mc-label mc-font"
+    :style="{
+      fontFamily: element.properties.fontType || 'MinecraftRegular',
+      justifyContent:
+        element.properties.textAlignment === 'right'
+          ? 'flex-end'
+          : element.properties.textAlignment === 'center'
+            ? 'center'
+            : 'flex-start',
+      color: element.properties.color
+        ? `rgb(${element.properties.color.map((c: number) => Math.round(c * 255)).join(',')})`
+        : 'white',
+      textShadow: element.properties.shadow ? '1px 1px 0 #3f3f3f' : 'none',
+    }"
+  >
     {{ element.properties.text }}
   </div>
 </template>

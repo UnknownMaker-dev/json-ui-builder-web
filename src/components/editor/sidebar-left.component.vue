@@ -1,16 +1,26 @@
 <script setup lang="ts">
 import { useEditorStore } from "../../stores/editor.store";
+import {
+  ELEMENT_DEFINITIONS,
+  isContainer,
+  type UIElementType,
+} from "../../types/element.types";
 import ExplorerItem from "./explorer-item.component.vue";
 
 const editorStore = useEditorStore();
 
-const handleAddElement = (type: "button" | "panel" | "label", name: string) => {
-  // Força o primeiro elemento a ser um painel
-  if (editorStore.elements.length === 0 && type !== "panel") {
-    alert("O primeiro elemento do projeto deve ser um Painel!");
+const tools = Object.values(ELEMENT_DEFINITIONS);
+
+const isDisabled = (type: UIElementType) =>
+  editorStore.elements.length === 0 && !isContainer(type);
+
+const handleAddElement = (type: UIElementType) => {
+  // O primeiro elemento do projeto precisa ser um container (raiz da tela).
+  if (isDisabled(type)) {
+    alert("O primeiro elemento do projeto deve ser um container (Panel, Stack, etc.)!");
     return;
   }
-  editorStore.addElement(type, name);
+  editorStore.addElement(type);
 };
 </script>
 
@@ -19,18 +29,13 @@ const handleAddElement = (type: "button" | "panel" | "label", name: string) => {
     <div class="section">
       <h2>Adicionar</h2>
       <ul class="toolbox">
-        <li @click="handleAddElement('panel', 'Novo Painel')">📦 Panel</li>
         <li
-          @click="handleAddElement('button', 'Novo Botão')"
-          :class="{ disabled: editorStore.elements.length === 0 }"
+          v-for="tool in tools"
+          :key="tool.type"
+          @click="handleAddElement(tool.type)"
+          :class="{ disabled: isDisabled(tool.type) }"
         >
-          🔘 Button
-        </li>
-        <li
-          @click="handleAddElement('label', 'Novo Texto')"
-          :class="{ disabled: editorStore.elements.length === 0 }"
-        >
-          📝 Label
+          {{ tool.icon }} {{ tool.label }}
         </li>
       </ul>
     </div>

@@ -4,6 +4,8 @@ import { useEditorStore, type UIElement } from "../../stores/editor.store";
 import PanelElement from "../elements/panel.component.vue";
 import ButtonElement from "../elements/button.component.vue";
 import LabelElement from "../elements/label.component.vue";
+import ImageElement from "../elements/image.component.vue";
+import ContainerElement from "../elements/container.component.vue";
 import CanvasNode from "./canvas-node.component.vue";
 
 const props = defineProps<{ element: UIElement }>();
@@ -13,6 +15,10 @@ const elementComponents: Record<string, any> = {
   panel: PanelElement,
   button: ButtonElement,
   label: LabelElement,
+  image: ImageElement,
+  stackPanel: ContainerElement,
+  collectionPanel: ContainerElement,
+  scrollingPanel: ContainerElement,
 };
 
 // --- ESTADOS COMPARTILHADOS (Drag & Resize) ---

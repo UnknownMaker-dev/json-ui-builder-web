@@ -4,10 +4,17 @@ import { Nineslice } from "../../utils/nineslice";
 
 const props = defineProps<{
   src?: string;
-  nineslice?: number;
+  nineslice?: number | [number, number, number, number];
   width: number;
   height: number;
 }>();
+
+// nineslice pode ser número único ou [l,t,r,b]; usa a soma p/ decidir se aplica.
+const hasNineslice = () => {
+  const n = props.nineslice;
+  if (n == null) return false;
+  return Array.isArray(n) ? n.some((v) => v > 0) : n > 0;
+};
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 
@@ -38,7 +45,7 @@ const drawTexture = async () => {
   }
 
   // Se não tiver nineslice configurado, desenha a imagem esticada normal
-  if (!props.nineslice || props.nineslice <= 0) {
+  if (!hasNineslice()) {
     ctx.clearRect(0, 0, props.width, props.height);
     ctx.drawImage(img, 0, 0, props.width, props.height);
     return;
@@ -55,7 +62,7 @@ const drawTexture = async () => {
   // Chama o algoritmo do projeto original
   const newPixels = Nineslice.ninesliceResize(
     {
-      nineslice_size: props.nineslice,
+      nineslice_size: props.nineslice!,
       base_size: [img.width, img.height],
     },
     imageData.data,
