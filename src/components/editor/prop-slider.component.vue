@@ -15,8 +15,9 @@ const props = withDefaults(
     max?: number;
     step?: number;
     unit?: string;
+    disabled?: boolean;
   }>(),
-  { min: 0, max: 100, step: 1 },
+  { min: 0, max: 100, step: 1, disabled: false },
 );
 
 const emit = defineEmits<{
@@ -53,7 +54,7 @@ const commit = () => emit("change");
 </script>
 
 <template>
-  <div class="prop-slider">
+  <div class="prop-slider" :class="{ disabled }">
     <label v-if="label" class="ps-label">
       {{ label }}<span v-if="unit" class="unit">{{ unit }}</span>
     </label>
@@ -65,6 +66,7 @@ const commit = () => emit("change");
         :max="max"
         :step="step"
         :value="sliderValue"
+        :disabled="disabled"
         :style="{ '--fill': fillPct + '%' }"
         @input="onSlider"
         @change="commit"
@@ -74,6 +76,7 @@ const commit = () => emit("change");
         type="number"
         :step="step"
         :value="current"
+        :disabled="disabled"
         @input="onNumber"
         @change="commit"
       />
@@ -86,6 +89,10 @@ const commit = () => emit("change");
   display: flex;
   flex-direction: column;
   gap: 5px;
+}
+.prop-slider.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 .ps-label {
   font-size: 11px;

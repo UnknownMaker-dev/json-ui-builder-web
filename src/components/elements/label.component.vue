@@ -4,53 +4,44 @@ import type { UIElement } from "../../stores/editor.store";
 
 const props = defineProps<{ element: UIElement }>();
 
-const boxRef = ref<HTMLElement | null>(null);
 const textRef = ref<HTMLElement | null>(null);
 
-// Tamanho de referência usado só para medir o texto antes de escalar.
-const REF_PX = 100;
+// Padding interno (px) ao redor do texto na caixa auto-dimensionada.
+const PAD_X = 4;
+const PAD_Y = 2;
+
+/** Tamanho da fonte em px no canvas (font_scale_factor * base). */
+const fontPx = () => (props.element.properties.fontSize ?? 1) * 16;
 
 /**
- * Ajusta a fonte para o texto CABER na caixa (fit): mede o texto num tamanho
- * de referência e escala pela menor razão entre largura e altura da caixa.
- * O valor resultante também é gravado em `fontSize` (font_scale_factor) para
- * o export ficar consistente com o que se vê.
+ * A caixa se MOLDA ao texto: mede o texto no tamanho de fonte atual e ajusta
+ * width/height do elemento para caberem exatamente. A fonte é quem comanda.
  */
-const fitText = () => {
-  const box = boxRef.value;
+const resizeBoxToText = () => {
   const text = textRef.value;
-  if (!box || !text) return;
-
-  text.style.fontSize = `${REF_PX}px`;
-  const tw = text.scrollWidth;
-  const th = text.scrollHeight;
-  if (tw === 0 || th === 0) return;
-
-  const scale = Math.min(box.clientWidth / tw, box.clientHeight / th);
-  const px = Math.max(1, REF_PX * scale);
-  text.style.fontSize = `${px}px`;
-
-  // Mantém a propriedade fontSize (font_scale_factor) alinhada ao visual.
-  props.element.properties.fontSize = +(px / 16).toFixed(3);
+  if (!text) return;
+  text.style.fontSize = `${fontPx()}px`;
+  const w = Math.ceil(text.scrollWidth) + PAD_X * 2;
+  const h = Math.ceil(text.scrollHeight) + PAD_Y * 2;
+  if (w > 0) props.element.properties.width = w;
+  if (h > 0) props.element.properties.height = h;
 };
 
-onMounted(() => nextTick(fitText));
+onMounted(() => nextTick(resizeBoxToText));
 
-// Refaz o fit quando a caixa, o texto ou a fonte mudam.
+// Refaz quando a fonte, o texto ou o tipo de fonte mudam.
 watch(
   () => [
-    props.element.properties.width,
-    props.element.properties.height,
+    props.element.properties.fontSize,
     props.element.properties.text,
     props.element.properties.fontType,
   ],
-  () => nextTick(fitText),
+  () => nextTick(resizeBoxToText),
 );
 </script>
 
 <template>
   <div
-    ref="boxRef"
     class="mc-label mc-font"
     :style="{
       justifyContent:
@@ -66,6 +57,7 @@ watch(
       class="label-text"
       :style="{
         fontFamily: element.properties.fontType || 'MinecraftRegular',
+        fontSize: fontPx() + 'px',
         color: element.properties.color
           ? `rgb(${element.properties.color.map((c: number) => Math.round(c * 255)).join(',')})`
           : 'white',
@@ -82,7 +74,7 @@ watch(
   height: 100%;
   display: flex;
   align-items: center;
-  overflow: hidden;
+  overflow: visible;
 }
 .label-text {
   white-space: nowrap;
