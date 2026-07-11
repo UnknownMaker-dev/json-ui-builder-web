@@ -8,8 +8,21 @@ import ImageElement from "../elements/image.component.vue";
 import ContainerElement from "../elements/container.component.vue";
 import CanvasNode from "./canvas-node.component.vue";
 
-const props = defineProps<{ element: UIElement }>();
+const props = defineProps<{ element: UIElement; parent?: UIElement }>();
 const editorStore = useEditorStore();
+
+// Dimensões do canvas raiz (devem casar com .canvas-container).
+const CANVAS_W = 800;
+const CANVAS_H = 600;
+
+const clamp = (v: number, min: number, max: number) =>
+  Math.min(Math.max(v, min), Math.max(min, max));
+
+/** Limites em que este elemento pode se mover: o container pai, ou o canvas. */
+const bounds = () =>
+  props.parent
+    ? { w: props.parent.properties.width, h: props.parent.properties.height }
+    : { w: CANVAS_W, h: CANVAS_H };
 
 const elementComponents: Record<string, any> = {
   panel: PanelElement,
@@ -46,8 +59,18 @@ const onDrag = (event: MouseEvent) => {
   if (!isDragging.value) return;
   const deltaX = event.clientX - startMouseX.value;
   const deltaY = event.clientY - startMouseY.value;
-  props.element.properties.x = initialX.value + deltaX;
-  props.element.properties.y = initialY.value + deltaY;
+  const b = bounds();
+  // Mantém o elemento dentro do container pai (0 até borda - tamanho).
+  props.element.properties.x = clamp(
+    initialX.value + deltaX,
+    0,
+    b.w - props.element.properties.width,
+  );
+  props.element.properties.y = clamp(
+    initialY.value + deltaY,
+    0,
+    b.h - props.element.properties.height,
+  );
 };
 
 const stopDrag = () => {
@@ -112,6 +135,21 @@ const onResize = (event: MouseEvent) => {
     newH = 10;
   }
 
+  // Mantém o elemento dentro do container pai (não ultrapassa as bordas).
+  const b = bounds();
+  if (newX < 0) {
+    newW += newX; // encolhe ao bater na borda esquerda
+    newX = 0;
+  }
+  if (newY < 0) {
+    newH += newY;
+    newY = 0;
+  }
+  if (newX + newW > b.w) newW = b.w - newX;
+  if (newY + newH > b.h) newH = b.h - newY;
+  newW = Math.max(10, newW);
+  newH = Math.max(10, newH);
+
   props.element.properties.width = newW;
   props.element.properties.height = newH;
   props.element.properties.x = newX;
@@ -146,6 +184,7 @@ const stopResize = () => {
         v-for="child in element.children"
         :key="child.id"
         :element="child"
+        :parent="element"
       />
     </component>
 

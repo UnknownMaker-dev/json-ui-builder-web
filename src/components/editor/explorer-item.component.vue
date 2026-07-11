@@ -2,6 +2,10 @@
 import { useEditorStore, type UIElement } from "../../stores/editor.store";
 import { ELEMENT_DEFINITIONS } from "../../types/element.types";
 
+// Necessário para a auto-referência recursiva (<ExplorerItem>) resolver:
+// o nome inferido do arquivo não corresponde, então declaramos explicitamente.
+defineOptions({ name: "ExplorerItem" });
+
 const props = defineProps<{
   element: UIElement;
   depth: number;
