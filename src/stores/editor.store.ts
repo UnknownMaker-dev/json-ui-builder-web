@@ -17,6 +17,15 @@ export const useEditorStore = defineStore("editor", () => {
   /** Namespace do arquivo JSON UI gerado (editável nas configurações). */
   const projectNamespace = ref<string>("custom_form");
 
+  /**
+   * Trava de proporção: quando ativa, o resize mantém a razão largura/altura
+   * (equivalente a segurar SHIFT). Existe para mobile, que não tem SHIFT.
+   */
+  const aspectLocked = ref(false);
+  function toggleAspectLock() {
+    aspectLocked.value = !aspectLocked.value;
+  }
+
   // --- SISTEMA DE HISTÓRICO (UNDO/REDO) ---
   const history = ref<string[]>([]);
   const historyIndex = ref(-1);
@@ -192,6 +201,8 @@ export const useEditorStore = defineStore("editor", () => {
     selectedElementId,
     selectedElement,
     projectNamespace,
+    aspectLocked,
+    toggleAspectLock,
     addElement,
     deleteElement,
     selectElement,

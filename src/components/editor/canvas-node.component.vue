@@ -43,7 +43,7 @@ const initialY = ref(0);
 // --- LÓGICA DE DRAG (Mover) ---
 const isDragging = ref(false);
 
-const startDrag = (event: MouseEvent) => {
+const startDrag = (event: PointerEvent) => {
   editorStore.selectElement(props.element.id);
   isDragging.value = true;
   startMouseX.value = event.clientX;
@@ -51,11 +51,12 @@ const startDrag = (event: MouseEvent) => {
   initialX.value = props.element.properties.x;
   initialY.value = props.element.properties.y;
 
-  window.addEventListener("mousemove", onDrag);
-  window.addEventListener("mouseup", stopDrag);
+  window.addEventListener("pointermove", onDrag);
+  window.addEventListener("pointerup", stopDrag);
+  window.addEventListener("pointercancel", stopDrag);
 };
 
-const onDrag = (event: MouseEvent) => {
+const onDrag = (event: PointerEvent) => {
   if (!isDragging.value) return;
   const deltaX = event.clientX - startMouseX.value;
   const deltaY = event.clientY - startMouseY.value;
@@ -76,9 +77,10 @@ const onDrag = (event: MouseEvent) => {
 const stopDrag = () => {
   if (isDragging.value) {
     isDragging.value = false;
-    window.removeEventListener("mousemove", onDrag);
-    window.removeEventListener("mouseup", stopDrag);
-    editorStore.saveSnapshot(); // <-- ADICIONADO AQUI
+    window.removeEventListener("pointermove", onDrag);
+    window.removeEventListener("pointerup", stopDrag);
+    window.removeEventListener("pointercancel", stopDrag);
+    editorStore.saveSnapshot();
   }
 };
 // --- LÓGICA DE RESIZE (Redimensionar) ---
@@ -87,7 +89,7 @@ const currentHandle = ref("");
 const initialW = ref(0);
 const initialH = ref(0);
 
-const startResize = (event: MouseEvent, handle: string) => {
+const startResize = (event: PointerEvent, handle: string) => {
   isResizing.value = true;
   currentHandle.value = handle;
   startMouseX.value = event.clientX;
@@ -97,14 +99,16 @@ const startResize = (event: MouseEvent, handle: string) => {
   initialW.value = props.element.properties.width;
   initialH.value = props.element.properties.height;
 
-  window.addEventListener("mousemove", onResize);
-  window.addEventListener("mouseup", stopResize);
+  window.addEventListener("pointermove", onResize);
+  window.addEventListener("pointerup", stopResize);
+  window.addEventListener("pointercancel", stopResize);
 };
 
-const onResize = (event: MouseEvent) => {
+const onResize = (event: PointerEvent) => {
   if (!isResizing.value) return;
   const deltaX = event.clientX - startMouseX.value;
   const deltaY = event.clientY - startMouseY.value;
+  const handle = currentHandle.value;
 
   let newW = initialW.value;
   let newH = initialH.value;
@@ -112,17 +116,33 @@ const onResize = (event: MouseEvent) => {
   let newY = initialY.value;
 
   // Lógica matemática para cada direção puxada
-  if (currentHandle.value.includes("e")) newW += deltaX; // Direita (East)
-  if (currentHandle.value.includes("s")) newH += deltaY; // Baixo (South)
-  if (currentHandle.value.includes("w")) {
+  if (handle.includes("e")) newW += deltaX; // Direita (East)
+  if (handle.includes("s")) newH += deltaY; // Baixo (South)
+  if (handle.includes("w")) {
     // Esquerda (West)
     newW -= deltaX;
     newX += deltaX;
   }
-  if (currentHandle.value.includes("n")) {
+  if (handle.includes("n")) {
     // Cima (North)
     newH -= deltaY;
     newY += deltaY;
+  }
+
+  // Manter proporção: SHIFT (desktop) ou trava de proporção (mobile).
+  const keepRatio = event.shiftKey || editorStore.aspectLocked;
+  const aspect = initialH.value > 0 ? initialW.value / initialH.value : 1;
+  if (keepRatio && aspect > 0) {
+    const horiz = handle.includes("e") || handle.includes("w");
+    const vert = handle.includes("n") || handle.includes("s");
+    if (vert && !horiz) {
+      newW = newH * aspect; // arrasto vertical comanda
+    } else {
+      newH = newW / aspect; // horizontal ou canto: largura comanda
+    }
+    // Reancorar o lado oposto quando puxa pelo topo/esquerda.
+    if (handle.includes("n")) newY = initialY.value + (initialH.value - newH);
+    if (handle.includes("w")) newX = initialX.value + (initialW.value - newW);
   }
 
   // Limite mínimo de tamanho (10px) para não bugar a tela
@@ -159,9 +179,10 @@ const onResize = (event: MouseEvent) => {
 const stopResize = () => {
   if (isResizing.value) {
     isResizing.value = false;
-    window.removeEventListener("mousemove", onResize);
-    window.removeEventListener("mouseup", stopResize);
-    editorStore.saveSnapshot(); // <-- ADICIONADO AQUI
+    window.removeEventListener("pointermove", onResize);
+    window.removeEventListener("pointerup", stopResize);
+    window.removeEventListener("pointercancel", stopResize);
+    editorStore.saveSnapshot();
   }
 };
 </script>
@@ -176,7 +197,7 @@ const stopResize = () => {
       width: element.properties.width + 'px',
       height: element.properties.height + 'px',
     }"
-    @mousedown.stop="startDrag"
+    @pointerdown.stop="startDrag"
   >
     <!-- Componente Real -->
     <component :is="elementComponents[element.type]" :element="element">
@@ -193,36 +214,36 @@ const stopResize = () => {
       <!-- Cantos -->
       <div
         class="resize-handle nw"
-        @mousedown.stop.prevent="startResize($event, 'nw')"
+        @pointerdown.stop.prevent="startResize($event, 'nw')"
       ></div>
       <div
         class="resize-handle ne"
-        @mousedown.stop.prevent="startResize($event, 'ne')"
+        @pointerdown.stop.prevent="startResize($event, 'ne')"
       ></div>
       <div
         class="resize-handle sw"
-        @mousedown.stop.prevent="startResize($event, 'sw')"
+        @pointerdown.stop.prevent="startResize($event, 'sw')"
       ></div>
       <div
         class="resize-handle se"
-        @mousedown.stop.prevent="startResize($event, 'se')"
+        @pointerdown.stop.prevent="startResize($event, 'se')"
       ></div>
       <!-- Bordas -->
       <div
         class="resize-handle n"
-        @mousedown.stop.prevent="startResize($event, 'n')"
+        @pointerdown.stop.prevent="startResize($event, 'n')"
       ></div>
       <div
         class="resize-handle s"
-        @mousedown.stop.prevent="startResize($event, 's')"
+        @pointerdown.stop.prevent="startResize($event, 's')"
       ></div>
       <div
         class="resize-handle e"
-        @mousedown.stop.prevent="startResize($event, 'e')"
+        @pointerdown.stop.prevent="startResize($event, 'e')"
       ></div>
       <div
         class="resize-handle w"
-        @mousedown.stop.prevent="startResize($event, 'w')"
+        @pointerdown.stop.prevent="startResize($event, 'w')"
       ></div>
     </template>
   </div>
@@ -233,6 +254,8 @@ const stopResize = () => {
   position: absolute;
   cursor: grab;
   user-select: none;
+  /* Evita que o navegador role/zoome enquanto arrasta no toque. */
+  touch-action: none;
 }
 .canvas-element-wrapper:active {
   cursor: grabbing;
@@ -249,7 +272,28 @@ const stopResize = () => {
   height: 8px;
   background-color: #ffffff;
   border: 1px solid var(--accent);
+  border-radius: 2px;
   z-index: 20;
+  touch-action: none;
+}
+/* Alvos de toque maiores em telas sem mouse. */
+@media (pointer: coarse) {
+  .resize-handle {
+    width: 18px;
+    height: 18px;
+    border-width: 2px;
+  }
+  .nw, .ne, .sw, .se, .n, .s, .e, .w {
+    /* recentraliza os handles maiores nas bordas */
+  }
+  .nw { top: -9px; left: -9px; }
+  .ne { top: -9px; right: -9px; }
+  .sw { bottom: -9px; left: -9px; }
+  .se { bottom: -9px; right: -9px; }
+  .n { top: -9px; left: calc(50% - 9px); }
+  .s { bottom: -9px; left: calc(50% - 9px); }
+  .e { top: calc(50% - 9px); right: -9px; }
+  .w { top: calc(50% - 9px); left: -9px; }
 }
 
 /* Posições e Cursores dos Handles */
