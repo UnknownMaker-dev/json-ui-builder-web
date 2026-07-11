@@ -179,11 +179,13 @@ const active = ref("start");
             <li>Escolha o <b>tipo</b> e preencha os campos que fizerem sentido:</li>
           </ol>
           <table class="fields">
-            <tr><td>binding_name</td><td>o dado de origem a ler (ex: <code>#form_button_text</code>).</td></tr>
-            <tr><td>binding_name_override</td><td>renomeia o dado para a propriedade que vai recebê-lo (ex: <code>#text</code>).</td></tr>
-            <tr><td>binding_collection_name</td><td>o nome da coleção (para o tipo <i>collection</i>).</td></tr>
-            <tr><td>source_property_name</td><td>a propriedade/expressão de origem observada (tipo <i>view</i>).</td></tr>
-            <tr><td>target_property_name</td><td>a propriedade que recebe o valor (ex: <code>#visible</code>).</td></tr>
+            <tbody>
+              <tr><td>binding_name</td><td>o dado de origem a ler (ex: <code>#form_button_text</code>).</td></tr>
+              <tr><td>binding_name_override</td><td>renomeia o dado para a propriedade que vai recebê-lo (ex: <code>#text</code>).</td></tr>
+              <tr><td>binding_collection_name</td><td>o nome da coleção (para o tipo <i>collection</i>).</td></tr>
+              <tr><td>source_property_name</td><td>a propriedade/expressão de origem observada (tipo <i>view</i>).</td></tr>
+              <tr><td>target_property_name</td><td>a propriedade que recebe o valor (ex: <code>#visible</code>).</td></tr>
+            </tbody>
           </table>
 
           <h2>Exemplo: esconder um texto quando estiver vazio</h2>
