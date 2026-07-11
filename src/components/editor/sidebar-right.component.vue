@@ -13,6 +13,7 @@ import { MINECRAFT_FONTS } from "../../config/export.config";
 import { ELEMENT_DEFINITIONS } from "../../types/element.types";
 import TexturePicker from "./texture-picker.component.vue";
 import BindingsEditor from "./bindings-editor.component.vue";
+import PropSlider from "./prop-slider.component.vue";
 
 const editorStore = useEditorStore();
 const el = computed(() => editorStore.selectedElement);
@@ -79,9 +80,15 @@ const stateLabels: Record<string, string> = {
               <option v-for="f in MINECRAFT_FONTS" :key="f" :value="f">{{ f }}</option>
             </select>
           </div>
-          <div class="field small">
-            <label>Tamanho</label>
-            <input type="number" step="0.1" v-model.number="el.properties.fontSize" @change="save" />
+          <div class="field">
+            <PropSlider
+              label="Tam. fonte"
+              :min="0.5"
+              :max="5"
+              :step="0.1"
+              v-model="el.properties.fontSize"
+              @change="save"
+            />
           </div>
         </div>
         <div class="row">
@@ -140,20 +147,23 @@ const stateLabels: Record<string, string> = {
       </template>
 
       <div class="field" v-if="hasTexture || el.type === 'button'">
-        <label>NineSlice (px)</label>
-        <input type="number" v-model.number="el.properties.nineslice" @change="save" />
+        <PropSlider
+          label="NineSlice"
+          unit="px"
+          :min="0"
+          :max="32"
+          :step="1"
+          v-model="el.properties.nineslice"
+          @change="save"
+        />
       </div>
 
       <div class="group">
         <span class="group-title">Posição & Tamanho</span>
-        <div class="row">
-          <div class="field small"><label>X</label><input type="number" v-model.number="el.properties.x" @change="save" /></div>
-          <div class="field small"><label>Y</label><input type="number" v-model.number="el.properties.y" @change="save" /></div>
-        </div>
-        <div class="row">
-          <div class="field small"><label>Largura</label><input type="number" v-model.number="el.properties.width" @change="save" /></div>
-          <div class="field small"><label>Altura</label><input type="number" v-model.number="el.properties.height" @change="save" /></div>
-        </div>
+        <PropSlider label="X" unit="px" :min="0" :max="800" v-model="el.properties.x" @change="save" />
+        <PropSlider label="Y" unit="px" :min="0" :max="600" v-model="el.properties.y" @change="save" />
+        <PropSlider label="Largura" unit="px" :min="1" :max="800" v-model="el.properties.width" @change="save" />
+        <PropSlider label="Altura" unit="px" :min="1" :max="600" v-model="el.properties.height" @change="save" />
       </div>
 
       <button class="collapse-btn" @click="showBindings = !showBindings">

@@ -168,8 +168,8 @@ export const ELEMENT_DEFINITIONS: Record<UIElementType, ElementDefinition> = {
     jsonUiType: "label",
     isContainer: false,
     defaults: () => ({
-      width: 100,
-      height: 20,
+      width: 120,
+      height: 28,
       text: "Texto",
       fontType: "MinecraftRegular",
       fontSize: 1,
