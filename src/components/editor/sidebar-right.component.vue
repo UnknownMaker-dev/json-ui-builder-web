@@ -80,7 +80,7 @@ const stateLabels: Record<string, string> = {
               <option v-for="f in MINECRAFT_FONTS" :key="f" :value="f">{{ f }}</option>
             </select>
           </div>
-          <div class="field">
+          <div class="field" v-if="el.type === 'button'">
             <PropSlider
               label="Tam. fonte"
               :min="0.5"
@@ -89,6 +89,9 @@ const stateLabels: Record<string, string> = {
               v-model="el.properties.fontSize"
               @change="save"
             />
+          </div>
+          <div class="field hint" v-else>
+            <span>Texto ajusta à caixa (fit)</span>
           </div>
         </div>
         <div class="row">
@@ -251,6 +254,13 @@ h2 :deep(svg) {
 }
 .field.small {
   flex: 0 0 auto;
+}
+.field.hint {
+  justify-content: flex-end;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+  padding-bottom: 7px;
 }
 .row {
   display: flex;
