@@ -17,6 +17,7 @@ defineProps<{ element: UIElement }>();
       class="button-text"
       :style="{
         fontFamily: element.properties.fontType || 'MinecraftRegular',
+        fontSize: (element.properties.fontSize ?? 1) * 16 + 'px',
         textAlign: element.properties.textAlignment || 'center',
       }"
       >{{ element.properties.text }}</span
