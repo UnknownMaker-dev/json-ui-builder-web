@@ -5,6 +5,16 @@
  * convertida para JSON UI do Minecraft pelo exporter. Cada tipo aqui mapeia
  * para um `type` do JSON UI (ver ELEMENT_DEFINITIONS.jsonUiType).
  */
+import type { Component } from "vue";
+import {
+  Square,
+  Layers,
+  LayoutGrid,
+  ScrollText,
+  Image as ImageIcon,
+  MousePointerClick,
+  Type,
+} from "lucide-vue-next";
 
 /** Um binding de dados do JSON UI (ligação a valores dinâmicos do Minecraft). */
 export interface UIBinding {
@@ -77,7 +87,8 @@ export interface UIElement {
 export interface ElementDefinition {
   type: UIElementType;
   label: string;
-  icon: string;
+  /** Ícone Lucide (componente Vue). */
+  icon: Component;
   /** `type` correspondente no JSON UI do Minecraft. */
   jsonUiType: string;
   /** Pode conter filhos (é um container)? */
@@ -93,7 +104,7 @@ export const ELEMENT_DEFINITIONS: Record<UIElementType, ElementDefinition> = {
   panel: {
     type: "panel",
     label: "Panel",
-    icon: "📦",
+    icon: Square,
     jsonUiType: "panel",
     isContainer: true,
     defaults: () => ({ width: 200, height: 200 }),
@@ -101,7 +112,7 @@ export const ELEMENT_DEFINITIONS: Record<UIElementType, ElementDefinition> = {
   stackPanel: {
     type: "stackPanel",
     label: "Stack Panel",
-    icon: "🧱",
+    icon: Layers,
     jsonUiType: "stack_panel",
     isContainer: true,
     defaults: () => ({ width: 200, height: 200, orientation: "vertical" }),
@@ -109,7 +120,7 @@ export const ELEMENT_DEFINITIONS: Record<UIElementType, ElementDefinition> = {
   collectionPanel: {
     type: "collectionPanel",
     label: "Collection Panel",
-    icon: "🗂️",
+    icon: LayoutGrid,
     jsonUiType: "collection_panel",
     isContainer: true,
     defaults: () => ({ width: 200, height: 200, collectionName: "form_buttons" }),
@@ -117,7 +128,7 @@ export const ELEMENT_DEFINITIONS: Record<UIElementType, ElementDefinition> = {
   scrollingPanel: {
     type: "scrollingPanel",
     label: "Scrolling Panel",
-    icon: "📜",
+    icon: ScrollText,
     jsonUiType: "scrolling_panel",
     isContainer: true,
     defaults: () => ({ width: 200, height: 200 }),
@@ -125,7 +136,7 @@ export const ELEMENT_DEFINITIONS: Record<UIElementType, ElementDefinition> = {
   image: {
     type: "image",
     label: "Image",
-    icon: "🖼️",
+    icon: ImageIcon,
     jsonUiType: "image",
     isContainer: false,
     defaults: () => ({ width: 64, height: 64, texture: TEX("default"), nineslice: 4 }),
@@ -133,7 +144,7 @@ export const ELEMENT_DEFINITIONS: Record<UIElementType, ElementDefinition> = {
   button: {
     type: "button",
     label: "Button",
-    icon: "🔘",
+    icon: MousePointerClick,
     jsonUiType: "button",
     isContainer: false,
     defaults: () => ({
@@ -153,7 +164,7 @@ export const ELEMENT_DEFINITIONS: Record<UIElementType, ElementDefinition> = {
   label: {
     type: "label",
     label: "Label",
-    icon: "📝",
+    icon: Type,
     jsonUiType: "label",
     isContainer: false,
     defaults: () => ({
