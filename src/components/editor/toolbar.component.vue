@@ -11,14 +11,17 @@ import {
   Braces,
   FileCode2,
   FolderOpen,
+  BookOpen,
 } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
 import { exportToJsonUiString } from "../../utils/json-ui-exporter";
 import { importFromJsonUi } from "../../utils/json-ui-importer";
 import { generateScript, generateServerForm } from "../../utils/scripter";
 import OutputModal from "./output-modal.component.vue";
+import Wiki from "./wiki.component.vue";
 
 const editorStore = useEditorStore();
+const showWiki = ref(false);
 
 const output = ref<{ title: string; content: string; filename: string } | null>(
   null,
@@ -95,6 +98,10 @@ const onImportFile = async (e: Event) => {
 
     <div class="spacer"></div>
 
+    <button class="btn btn-ghost wiki-btn" @click="showWiki = true">
+      <BookOpen :size="16" /> Wiki
+    </button>
+
     <div class="actions">
       <button class="btn btn-primary" @click="exportJsonUi">
         <Braces :size="16" /> Gerar JSON UI
@@ -120,6 +127,8 @@ const onImportFile = async (e: Event) => {
       :filename="output.filename"
       @close="output = null"
     />
+
+    <Wiki v-if="showWiki" @close="showWiki = false" />
   </header>
 </template>
 
@@ -274,5 +283,13 @@ const onImportFile = async (e: Event) => {
 }
 .seg-item + .seg-item {
   border-left: 1px solid var(--border);
+}
+.wiki-btn {
+  color: var(--accent);
+}
+.wiki-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 </style>
