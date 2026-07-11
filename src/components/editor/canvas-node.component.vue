@@ -170,10 +170,11 @@ const onResize = (event: PointerEvent) => {
   newW = Math.max(10, newW);
   newH = Math.max(10, newH);
 
-  props.element.properties.width = newW;
-  props.element.properties.height = newH;
-  props.element.properties.x = newX;
-  props.element.properties.y = newY;
+  // Arredonda: a proporção gera frações e canvas/ImageData exigem inteiros.
+  props.element.properties.width = Math.round(newW);
+  props.element.properties.height = Math.round(newH);
+  props.element.properties.x = Math.round(newX);
+  props.element.properties.y = Math.round(newY);
 };
 
 const stopResize = () => {
