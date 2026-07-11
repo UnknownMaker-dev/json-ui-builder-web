@@ -11,6 +11,7 @@ defineProps<{
     class="mc-label mc-font"
     :style="{
       fontFamily: element.properties.fontType || 'MinecraftRegular',
+      fontSize: (element.properties.fontSize ?? 1) * 16 + 'px',
       justifyContent:
         element.properties.textAlignment === 'right'
           ? 'flex-end'
