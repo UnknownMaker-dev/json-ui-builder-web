@@ -68,9 +68,14 @@ const drawTexture = async () => {
   const ctx = canvasRef.value.getContext("2d");
   if (!ctx) return;
 
+  // Dimensões DEVEM ser inteiras: new ImageData() lança erro com frações
+  // (o resize com proporção pode gerar tamanhos fracionários).
+  const W = Math.max(1, Math.round(props.width));
+  const H = Math.max(1, Math.round(props.height));
+
   // Ajusta o tamanho do canvas e desliga a suavização (queremos pixels nítidos).
-  canvasRef.value.width = props.width;
-  canvasRef.value.height = props.height;
+  canvasRef.value.width = W;
+  canvasRef.value.height = H;
   ctx.imageSmoothingEnabled = false;
 
   // Carrega a imagem
@@ -90,8 +95,8 @@ const drawTexture = async () => {
 
   // Sem nineslice (nem no json, nem manual): desenha esticado, mas sem suavizar.
   if (!info && !hasNineslice()) {
-    ctx.clearRect(0, 0, props.width, props.height);
-    ctx.drawImage(img, 0, 0, props.width, props.height);
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(img, 0, 0, W, H);
     return;
   }
 
@@ -112,20 +117,16 @@ const drawTexture = async () => {
   tempCtx.drawImage(img, 0, 0, baseW, baseH);
   const imageData = tempCtx.getImageData(0, 0, baseW, baseH);
 
-  // Chama o algoritmo do projeto original
+  // Chama o algoritmo do projeto original (dimensões inteiras)
   const newPixels = Nineslice.ninesliceResize(
     { nineslice_size: nsSize, base_size: [baseW, baseH] },
     imageData.data,
-    props.width,
-    props.height,
+    W,
+    H,
     1,
   );
 
-  const newImageData = new ImageData(
-    newPixels as any,
-    props.width,
-    props.height,
-  );
+  const newImageData = new ImageData(newPixels as any, W, H);
   ctx.putImageData(newImageData, 0, 0);
 };
 
