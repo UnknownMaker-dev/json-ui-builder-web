@@ -1,14 +1,18 @@
 <script setup lang="ts">
+import toolbarComponent from "./components/editor/toolbar.component.vue";
 import sidebarleftComponent from "./components/editor/sidebar-left.component.vue";
 import sidebarrightComponent from "./components/editor/sidebar-right.component.vue";
 import canvasareaComponent from "./components/editor/canvas-area.component.vue";
 </script>
 
 <template>
-  <div class="editor-layout">
-    <sidebarleftComponent />
-    <sidebarrightComponent />
-    <canvasareaComponent />
+  <div class="app-shell">
+    <toolbarComponent />
+    <div class="editor-layout">
+      <sidebarleftComponent />
+      <canvasareaComponent />
+      <sidebarrightComponent />
+    </div>
   </div>
 </template>
 
@@ -26,9 +30,15 @@ body {
   overflow: hidden; /* Evita scroll na página inteira */
 }
 
-.editor-layout {
+.app-shell {
   display: flex;
+  flex-direction: column;
   width: 100vw;
   height: 100vh;
+}
+.editor-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 </style>

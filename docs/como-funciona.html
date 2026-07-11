@@ -1,0 +1,342 @@
+<title>Como funciona — JSON UI Builder</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f5f6f3;
+    --surface: #ffffff;
+    --surface-2: #eef0ea;
+    --ink: #1c2620;
+    --ink-soft: #4a5751;
+    --ink-faint: #7a867f;
+    --line: #dde1d8;
+    --accent: #2f9e57;
+    --accent-deep: #1f7a41;
+    --accent-soft: #e4f2e9;
+    --amber: #c8892b;
+    --violet: #6b5bd2;
+    --code-bg: #f0f2ec;
+    --radius: 10px;
+    --mono: "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141815;
+      --surface: #1b211d;
+      --surface-2: #222a25;
+      --ink: #e8ede9;
+      --ink-soft: #a9b4ad;
+      --ink-faint: #77837b;
+      --line: #2c342e;
+      --accent: #46c274;
+      --accent-deep: #6fd694;
+      --accent-soft: #1d2c22;
+      --code-bg: #10140f;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f6f3; --surface: #ffffff; --surface-2: #eef0ea; --ink: #1c2620;
+    --ink-soft: #4a5751; --ink-faint: #7a867f; --line: #dde1d8; --accent: #2f9e57;
+    --accent-deep: #1f7a41; --accent-soft: #e4f2e9; --code-bg: #f0f2ec;
+  }
+  :root[data-theme="dark"] {
+    --bg: #141815; --surface: #1b211d; --surface-2: #222a25; --ink: #e8ede9;
+    --ink-soft: #a9b4ad; --ink-faint: #77837b; --line: #2c342e; --accent: #46c274;
+    --accent-deep: #6fd694; --accent-soft: #1d2c22; --code-bg: #10140f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* Header */
+  header.hero {
+    padding: 72px 0 40px; border-bottom: 1px solid var(--line); margin-bottom: 48px;
+  }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--accent-deep); margin: 0 0 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::before {
+    content: ""; width: 10px; height: 10px; background: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft); display: inline-block;
+  }
+  h1 {
+    font-size: clamp(30px, 5vw, 46px); line-height: 1.08; margin: 0 0 18px;
+    letter-spacing: -0.02em; text-wrap: balance; font-weight: 700;
+  }
+  h1 .mark { color: var(--accent); }
+  .lede { font-size: 18px; color: var(--ink-soft); max-width: 62ch; margin: 0; }
+
+  h2 {
+    font-size: 13px; font-family: var(--mono); text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--ink-faint); margin: 56px 0 20px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--line);
+  }
+  h3 { font-size: 19px; margin: 32px 0 8px; letter-spacing: -0.01em; }
+  p { margin: 0 0 16px; }
+  a { color: var(--accent-deep); }
+  code {
+    font-family: var(--mono); font-size: 0.86em; background: var(--code-bg);
+    padding: 1px 5px; border-radius: 4px; color: var(--ink);
+  }
+  strong { font-weight: 650; }
+
+  /* Pipeline diagram */
+  .pipeline {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    margin: 8px 0 12px;
+  }
+  .stage {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px 16px; position: relative;
+  }
+  .stage .n {
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .stage h4 { margin: 6px 0 6px; font-size: 15px; }
+  .stage p { font-size: 13.5px; color: var(--ink-soft); margin: 0; }
+  .flow-note {
+    text-align: center; font-family: var(--mono); font-size: 12px;
+    color: var(--ink-faint); margin: 4px 0 0;
+  }
+  @media (max-width: 640px){ .pipeline { grid-template-columns: 1fr; } }
+
+  /* Steps */
+  ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 0; }
+  ol.steps > li {
+    counter-increment: s; position: relative; padding: 0 0 24px 52px;
+  }
+  ol.steps > li::before {
+    content: counter(s); position: absolute; left: 0; top: -2px;
+    width: 34px; height: 34px; border-radius: 8px;
+    background: var(--accent-soft); color: var(--accent-deep);
+    font-family: var(--mono); font-weight: 700; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line);
+  }
+  ol.steps > li:not(:last-child)::after {
+    content: ""; position: absolute; left: 17px; top: 34px; bottom: 6px;
+    width: 1px; background: var(--line);
+  }
+  ol.steps h3 { margin: 4px 0 6px; font-size: 17px; }
+  ol.steps p { font-size: 14.5px; color: var(--ink-soft); margin: 0; }
+
+  /* Feature grid */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px){ .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 16px 18px;
+  }
+  .card .tag {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--accent-deep); background: var(--accent-soft);
+    padding: 2px 7px; border-radius: 4px; display: inline-block; margin-bottom: 8px;
+  }
+  .card h4 { margin: 0 0 5px; font-size: 15.5px; }
+  .card p { font-size: 13px; color: var(--ink-soft); margin: 0; }
+
+  /* File map table */
+  .filemap {
+    width: 100%; border-collapse: collapse; font-size: 13.5px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .filemap td { padding: 10px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+  .filemap tr:first-child td { border-top: none; }
+  .filemap td:first-child {
+    font-family: var(--mono); font-size: 12.5px; color: var(--accent-deep);
+    white-space: nowrap; width: 1%;
+  }
+  .filemap td:last-child { color: var(--ink-soft); }
+  .scroll-x { overflow-x: auto; }
+
+  /* Callout */
+  .callout {
+    background: var(--accent-soft); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent); border-radius: var(--radius);
+    padding: 16px 18px; margin: 24px 0; font-size: 14.5px; color: var(--ink-soft);
+  }
+  .callout strong { color: var(--ink); }
+
+  /* Code block */
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 16px; overflow-x: auto;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.55; margin: 16px 0;
+  }
+  pre .k { color: var(--accent-deep); }
+  pre .s { color: var(--amber); }
+  pre .c { color: var(--ink-faint); }
+
+  footer {
+    margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--ink-faint); font-family: var(--mono);
+  }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">json-ui-builder-web · funcionalidades portadas</p>
+    <h1>Do canvas ao <span class="mark">JSON UI</span> do Minecraft, em um fluxo só.</h1>
+    <p class="lede">
+      Você desenha a tela arrastando componentes; a árvore reativa (Pinia) é a
+      fonte de verdade; e um conversor transforma essa árvore no formato JSON UI
+      do Bedrock — além de gerar o script do addon e reimportar arquivos. Este é
+      o passo a passo de como cada peça se encaixa.
+    </p>
+  </header>
+
+  <h2>O fluxo em três estágios</h2>
+  <p>
+    Toda a ferramenta gira em torno de uma única conversão. Você opera o estágio
+    da esquerda; a store guarda o do meio; a exportação produz o da direita.
+  </p>
+  <div class="pipeline">
+    <div class="stage">
+      <span class="n">ESTÁGIO 01</span>
+      <h4>Desenho (Canvas)</h4>
+      <p>Arrastar, redimensionar e aninhar componentes. Posições em pixels absolutos.</p>
+    </div>
+    <div class="stage">
+      <span class="n">ESTÁGIO 02</span>
+      <h4>Árvore (Pinia)</h4>
+      <p>Cada componente é um <code>UIElement</code> com <code>children</code>. Estado único e reativo.</p>
+    </div>
+    <div class="stage">
+      <span class="n">ESTÁGIO 03</span>
+      <h4>JSON UI (Export)</h4>
+      <p>Percorre a árvore e emite o <code>.json</code> do Minecraft, com escala de coordenadas.</p>
+    </div>
+  </div>
+  <p class="flow-note">canvas ⟶ árvore de UIElement ⟶ JSON UI · (e o caminho inverso na importação)</p>
+
+  <h2>Como usar — passo a passo</h2>
+  <ol class="steps">
+    <li>
+      <h3>Adicione um container raiz</h3>
+      <p>Na barra lateral esquerda, clique em <strong>Panel</strong> (ou Stack / Collection / Scrolling). O primeiro elemento precisa ser um container — ele é a raiz da tela.</p>
+    </li>
+    <li>
+      <h3>Monte a hierarquia</h3>
+      <p>Com um container selecionado, adicione <strong>Button</strong>, <strong>Label</strong> ou <strong>Image</strong> dentro dele. Arraste no canvas e use os 8 handles para redimensionar. O Explorer mostra a árvore.</p>
+    </li>
+    <li>
+      <h3>Escolha texturas</h3>
+      <p>No painel direito, clique no quadro de textura para abrir o <strong>seletor visual</strong>: navegue pelos 5 presets ore-ui, busque por nome, ou envie um <strong>PNG + JSON</strong> próprio (guardado localmente). Botões têm texturas de estado (default / hover / pressed).</p>
+    </li>
+    <li>
+      <h3>Ajuste propriedades e bindings</h3>
+      <p>Edite texto, fonte, alinhamento, cor, nineslice e tamanho. No colapsável <strong>Bindings</strong>, ligue propriedades a dados dinâmicos do Minecraft (view / collection / global).</p>
+    </li>
+    <li>
+      <h3>Defina o namespace e gere o JSON UI</h3>
+      <p>No topo, ajuste o <strong>Namespace</strong> e clique em <strong>Gerar JSON UI</strong>. Abre um modal com o código; copie ou baixe o <code>.json</code>.</p>
+    </li>
+    <li>
+      <h3>Gere o script e o server_form</h3>
+      <p>Os botões <strong>TS</strong> / <strong>JS</strong> geram o addon <code>@minecraft/server-ui</code> com um <code>form.button()</code> por botão desenhado. <strong>server_form</strong> gera o wrapper de diálogo.</p>
+    </li>
+    <li>
+      <h3>Reimporte quando quiser</h3>
+      <p><strong>Importar</strong> lê um <code>.json</code> gerado aqui (com o bloco <code>config</code>) e reconstrói a árvore no editor — o caminho inverso completo.</p>
+    </li>
+  </ol>
+
+  <h2>O que foi portado do original</h2>
+  <div class="grid">
+    <div class="card">
+      <span class="tag">Núcleo</span>
+      <h4>Exportador JSON UI</h4>
+      <p>Árvore → JSON UI com <code>anchor top_left</code> + offset/size escalados por <code>UI_SCALAR</code>. Templates de botão e scrolling embutidos.</p>
+    </div>
+    <div class="card">
+      <span class="tag">Núcleo</span>
+      <h4>Importador</h4>
+      <p>Remove comentários, lê <code>config.magicNumbers</code> para desfazer a escala, e recria a árvore de elementos.</p>
+    </div>
+    <div class="card">
+      <span class="tag">Elementos</span>
+      <h4>Tipos completos</h4>
+      <p>Panel, Stack, Collection e Scrolling panel, Image, Button (com estados) e Label — cada um com seu <code>type</code> de JSON UI.</p>
+    </div>
+    <div class="card">
+      <span class="tag">Avançado</span>
+      <h4>Scripter</h4>
+      <p>Gera o código TS/JS do formulário do addon a partir dos botões, além do <code>server_form.json</code>.</p>
+    </div>
+    <div class="card">
+      <span class="tag">Avançado</span>
+      <h4>Editor de bindings</h4>
+      <p>UI dedicada para adicionar/editar bindings (view, collection, global) em qualquer elemento.</p>
+    </div>
+    <div class="card">
+      <span class="tag">Texturas</span>
+      <h4>Presets + upload local</h4>
+      <p>Seletor visual dos 5 estilos ore-ui via <code>mapping.json</code>, com upload de PNG+JSON guardado no navegador.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>O que ficou de fora, de propósito:</strong> autenticação client-side e o
+    "banco" sql.js do original. Eram infra falsa (sem backend real, sem segurança)
+    — substituímos o único uso que importava, o upload de texturas, por
+    armazenamento local direto.
+  </div>
+
+  <h2>O detalhe que faz tudo funcionar: coordenadas</h2>
+  <p>
+    O editor pensa em <strong>pixels absolutos</strong> (canto superior esquerdo).
+    O Minecraft pensa em <strong>âncora + offset</strong> com unidades próprias. A
+    ponte é uma multiplicação: todo elemento sai ancorado em <code>top_left</code>
+    e tem seu offset e tamanho multiplicados por <code>UI_SCALAR</code> (0.36).
+    Labels recebem uma correção extra de fonte. Como esses "números mágicos" vão
+    embutidos no arquivo, a reimportação consegue desfazer a escala com fidelidade.
+  </p>
+  <pre><span class="c">// exporter — o coração da conversão</span>
+offset: [ p.x * <span class="k">UI_SCALAR</span>, p.y * <span class="k">UI_SCALAR</span> ],
+size:   [ p.width * <span class="k">UI_SCALAR</span>, p.height * <span class="k">UI_SCALAR</span> ],
+anchor_from: <span class="s">"top_left"</span>, anchor_to: <span class="s">"top_left"</span>,
+<span class="c">// botões referenciam um template herdado:</span>
+<span class="s">"play@custom_form.custom_button"</span>: { $button_size: [...], ... }</pre>
+
+  <h2>Onde cada peça vive</h2>
+  <div class="scroll-x">
+    <table class="filemap">
+      <tr><td>types/element.types.ts</td><td>Modelo <code>UIElement</code>, tipos e o registro de elementos (defaults, ícones, tipo JSON UI).</td></tr>
+      <tr><td>config/export.config.ts</td><td>Os números de calibração: <code>UI_SCALAR</code>, escalas e offsets de fonte.</td></tr>
+      <tr><td>utils/json-ui-exporter.ts</td><td>Percorre a árvore e monta o objeto/string JSON UI.</td></tr>
+      <tr><td>utils/json-ui-importer.ts</td><td>Caminho inverso: JSON UI → árvore de elementos.</td></tr>
+      <tr><td>utils/json-ui-templates.ts</td><td>Templates complexos (botão com hover text, scrolling, server_form).</td></tr>
+      <tr><td>utils/scripter.ts</td><td>Gera o código TS/JS do addon a partir dos botões.</td></tr>
+      <tr><td>utils/presets.ts</td><td>Carrega os presets de textura e gerencia o upload local.</td></tr>
+      <tr><td>stores/editor.store.ts</td><td>A fonte de verdade: árvore, seleção, histórico, copy/paste, import.</td></tr>
+      <tr><td>components/editor/*</td><td>Toolbar, sidebars, seletor de textura, editor de bindings, modais.</td></tr>
+    </table>
+  </div>
+
+  <footer>
+    json-ui-builder-web · Vue 3 · Pinia · Vite — baseado no JSON-UI-Maker original.
+  </footer>
+</div>
+
+<script>
+  // Reforça o tema quando o hospedeiro carimba data-theme (respeita ambas direções).
+  (function () {
+    var root = document.documentElement;
+    if (!root.getAttribute("data-theme")) {
+      var mq = window.matchMedia("(prefers-color-scheme: dark)");
+      root.setAttribute("data-theme", mq.matches ? "dark" : "light");
+      mq.addEventListener("change", function (e) {
+        root.setAttribute("data-theme", e.matches ? "dark" : "light");
+      });
+    }
+  })();
+</script>

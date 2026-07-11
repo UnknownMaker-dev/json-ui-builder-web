@@ -8,12 +8,19 @@ defineProps<{ element: UIElement }>();
 <template>
   <button class="mc-button mc-font">
     <TextureRenderer
-      :src="element.properties.texture"
+      :src="element.properties.defaultTexture || element.properties.texture"
       :nineslice="element.properties.nineslice"
       :width="element.properties.width"
       :height="element.properties.height"
     />
-    <span class="button-text">{{ element.properties.text }}</span>
+    <span
+      class="button-text"
+      :style="{
+        fontFamily: element.properties.fontType || 'MinecraftRegular',
+        textAlign: element.properties.textAlignment || 'center',
+      }"
+      >{{ element.properties.text }}</span
+    >
   </button>
 </template>
 
