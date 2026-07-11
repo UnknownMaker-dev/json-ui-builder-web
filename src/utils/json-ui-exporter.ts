@@ -184,12 +184,19 @@ function buildTree(
   nodes: UIElement[],
   namespace: string,
   depth: number,
+  parentIsStack = false,
 ): Record<string, any> {
   const out: Record<string, any> = {};
 
   for (const el of nodes) {
     const { json, link, continuePath } = elementToJsonUi(el, namespace);
     const def = ELEMENT_DEFINITIONS[el.type];
+
+    // Filho de stack_panel: o Minecraft posiciona sozinho — zera o offset.
+    if (parentIsStack) {
+      if ("offset" in json) json.offset = [0, 0];
+      if ("$button_offset" in json) json.$button_offset = [0, 0];
+    }
 
     // Scrolling panel: gera uma sub-árvore ligada (padrão common.scrolling_panel).
     if (el.type === "scrollingPanel") {
@@ -203,7 +210,7 @@ function buildTree(
 
     if (continuePath && def.isContainer && el.children.length) {
       json.controls = Object.entries(
-        buildTree(el.children, namespace, depth + 1),
+        buildTree(el.children, namespace, depth + 1, el.type === "stackPanel"),
       ).map(([k, v]) => ({ [k]: v }));
     }
 
