@@ -104,18 +104,22 @@ const active = ref("start");
           <h2>Selecionar, mover e redimensionar</h2>
           <ul class="bullets">
             <li><b>Selecionar:</b> clique no elemento no canvas ou no Explorer (esquerda).</li>
-            <li><b>Mover:</b> arraste o elemento. Ele não sai das bordas do container pai.</li>
-            <li><b>Redimensionar:</b> arraste um dos 8 quadradinhos ao redor do elemento selecionado.</li>
+            <li><b>Mover:</b> arraste o elemento, ou use as <b>setas</b> do teclado (segure <kbd>Shift</kbd> para passos de 10px). Ele não sai das bordas do pai.</li>
+            <li><b>Redimensionar:</b> arraste um dos 8 quadradinhos. Segure <kbd>Shift</kbd> para <b>manter a proporção</b> e <kbd>Alt</kbd> para redimensionar <b>a partir do centro</b>.</li>
           </ul>
 
           <h2>Atalhos de teclado</h2>
           <div class="shortcuts">
+            <div><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> Mover selecionado</div>
+            <div><kbd>Shift</kbd>+setas Passo de 10px</div>
             <div><kbd>Del</kbd> Deletar selecionado</div>
             <div><kbd>Ctrl</kbd>+<kbd>Z</kbd> Desfazer</div>
             <div><kbd>Ctrl</kbd>+<kbd>Y</kbd> Refazer</div>
             <div><kbd>Ctrl</kbd>+<kbd>C</kbd> Copiar</div>
             <div><kbd>Ctrl</kbd>+<kbd>V</kbd> Colar</div>
+            <div><kbd>Shift</kbd>/<kbd>Alt</kbd> ao redimensionar</div>
           </div>
+          <div class="tip">Em itens dentro de um <b>Stack Panel</b>, as setas <b>reordenam</b> na pilha (na direção da orientação) em vez de mover livre.</div>
 
           <h2>Explorer</h2>
           <p>A árvore da esquerda mostra a hierarquia (pais e filhos). Clique para selecionar; itens aninhados aparecem indentados.</p>

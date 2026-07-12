@@ -39,6 +39,23 @@ const handleKeyDown = (event: KeyboardEvent) => {
   if (event.ctrlKey && event.key.toLowerCase() === "v") {
     editorStore.pasteElement();
   }
+
+  // Setas: move o elemento selecionado (Shift = passo maior).
+  // Em filhos de stack_panel, reordena na pilha.
+  if (event.key.startsWith("Arrow") && editorStore.selectedElementId) {
+    const step = event.shiftKey ? 10 : 1;
+    const moves: Record<string, [number, number]> = {
+      ArrowLeft: [-step, 0],
+      ArrowRight: [step, 0],
+      ArrowUp: [0, -step],
+      ArrowDown: [0, step],
+    };
+    const move = moves[event.key];
+    if (move) {
+      event.preventDefault();
+      editorStore.nudgeSelected(move[0], move[1]);
+    }
+  }
 };
 
 onMounted(() => {
