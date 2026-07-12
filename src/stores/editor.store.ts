@@ -183,6 +183,33 @@ export const useEditorStore = defineStore("editor", () => {
     saveSnapshot();
   }
 
+  /** Pai do elemento selecionado (null se for raiz). */
+  const selectedParent = computed(() =>
+    selectedElement.value
+      ? findParent(elements.value, selectedElement.value.id)
+      : null,
+  );
+
+  /**
+   * Centraliza o elemento selecionado no seu container (o pai, ou o canvas se
+   * for raiz). `axis`: "h" (horizontal), "v" (vertical) ou "both".
+   * Não se aplica a filhos de stack_panel (que são posicionados pela pilha).
+   */
+  function centerSelected(axis: "h" | "v" | "both") {
+    const el = selectedElement.value;
+    if (!el) return;
+    const parent = selectedParent.value;
+    if (parent && parent.type === "stackPanel") return;
+
+    const bw = parent ? parent.properties.width : CANVAS_W;
+    const bh = parent ? parent.properties.height : CANVAS_H;
+    if (axis === "h" || axis === "both")
+      el.properties.x = Math.round((bw - el.properties.width) / 2);
+    if (axis === "v" || axis === "both")
+      el.properties.y = Math.round((bh - el.properties.height) / 2);
+    saveSnapshot();
+  }
+
   /** Substitui toda a árvore (usado na importação). */
   function setElements(next: UIElement[]) {
     elements.value = next;
@@ -244,6 +271,8 @@ export const useEditorStore = defineStore("editor", () => {
     deleteElement,
     selectElement,
     nudgeSelected,
+    selectedParent,
+    centerSelected,
     setElements,
     reset,
     saveSnapshot,
