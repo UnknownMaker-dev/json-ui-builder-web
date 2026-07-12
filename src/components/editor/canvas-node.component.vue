@@ -198,18 +198,36 @@ const onResize = (event: PointerEvent) => {
   let newX = initialX.value;
   let newY = initialY.value;
 
-  // Lógica matemática para cada direção puxada
-  if (handle.includes("e")) newW += deltaX; // Direita (East)
-  if (handle.includes("s")) newH += deltaY; // Baixo (South)
-  if (handle.includes("w")) {
-    // Esquerda (West)
-    newW -= deltaX;
-    newX += deltaX;
-  }
-  if (handle.includes("n")) {
-    // Cima (North)
-    newH -= deltaY;
-    newY += deltaY;
+  if (event.altKey) {
+    // Alt: redimensiona simétrico, mantendo o CENTRO fixo (cresce dos 2 lados).
+    if (handle.includes("e")) {
+      newW += 2 * deltaX;
+      newX -= deltaX;
+    }
+    if (handle.includes("w")) {
+      newW -= 2 * deltaX;
+      newX += deltaX;
+    }
+    if (handle.includes("s")) {
+      newH += 2 * deltaY;
+      newY -= deltaY;
+    }
+    if (handle.includes("n")) {
+      newH -= 2 * deltaY;
+      newY += deltaY;
+    }
+  } else {
+    // Padrão: a borda puxada se move; a oposta fica fixa.
+    if (handle.includes("e")) newW += deltaX; // Direita (East)
+    if (handle.includes("s")) newH += deltaY; // Baixo (South)
+    if (handle.includes("w")) {
+      newW -= deltaX;
+      newX += deltaX;
+    }
+    if (handle.includes("n")) {
+      newH -= deltaY;
+      newY += deltaY;
+    }
   }
 
   // Manter proporção: SHIFT (desktop) ou trava de proporção (mobile).

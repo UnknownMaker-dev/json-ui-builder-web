@@ -146,6 +146,43 @@ export const useEditorStore = defineStore("editor", () => {
     selectedElementId.value = id;
   }
 
+  // Dimensões do canvas raiz (devem casar com .canvas-container / canvas-node).
+  const CANVAS_W = 800;
+  const CANVAS_H = 600;
+  const clampVal = (v: number, min: number, max: number) =>
+    Math.min(Math.max(v, min), Math.max(min, max));
+
+  /**
+   * Move o elemento selecionado por (dx, dy). Se ele for filho de um
+   * stack_panel, as setas REORDENAM na pilha (o eixo segue a orientação) em vez
+   * de mover livre. Caso contrário, move respeitando os limites do container.
+   */
+  function nudgeSelected(dx: number, dy: number) {
+    const el = selectedElement.value;
+    if (!el) return;
+    const parent = findParent(elements.value, el.id);
+
+    if (parent && parent.type === "stackPanel") {
+      const horizontal = parent.properties.orientation === "horizontal";
+      const step = horizontal ? dx : dy;
+      if (step === 0) return;
+      const idx = parent.children.findIndex((c) => c.id === el.id);
+      const ni = idx + (step > 0 ? 1 : -1);
+      if (ni >= 0 && ni < parent.children.length) {
+        parent.children.splice(idx, 1);
+        parent.children.splice(ni, 0, el);
+        saveSnapshot();
+      }
+      return;
+    }
+
+    const bw = parent ? parent.properties.width : CANVAS_W;
+    const bh = parent ? parent.properties.height : CANVAS_H;
+    el.properties.x = clampVal(el.properties.x + dx, 0, bw - el.properties.width);
+    el.properties.y = clampVal(el.properties.y + dy, 0, bh - el.properties.height);
+    saveSnapshot();
+  }
+
   /** Substitui toda a árvore (usado na importação). */
   function setElements(next: UIElement[]) {
     elements.value = next;
@@ -206,6 +243,7 @@ export const useEditorStore = defineStore("editor", () => {
     addElement,
     deleteElement,
     selectElement,
+    nudgeSelected,
     setElements,
     reset,
     saveSnapshot,
