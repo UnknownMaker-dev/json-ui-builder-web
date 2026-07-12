@@ -7,6 +7,9 @@ import {
   ChevronDown,
   ImagePlus,
   MousePointer2,
+  AlignHorizontalJustifyCenter,
+  AlignVerticalJustifyCenter,
+  Crosshair,
 } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
 import { MINECRAFT_FONTS } from "../../config/export.config";
@@ -43,6 +46,11 @@ const hasTexture = computed(
   () => el.value?.type === "panel" || el.value?.type === "image",
 );
 const showBindings = ref(false);
+
+// Centralizar não se aplica a filhos de stack_panel (posicionados pela pilha).
+const canCenter = computed(
+  () => editorStore.selectedParent?.type !== "stackPanel",
+);
 
 const stateLabels: Record<string, string> = {
   defaultTexture: "Default",
@@ -163,6 +171,34 @@ const stateLabels: Record<string, string> = {
           Posição & Tamanho
           <em v-if="el.type === 'label'" class="derived">tamanho segue a fonte</em>
         </span>
+
+        <div class="align-row" v-if="canCenter">
+          <span class="align-label">Centralizar no container</span>
+          <div class="align-btns">
+            <button
+              class="align-btn"
+              title="Centralizar na horizontal"
+              @click="editorStore.centerSelected('h')"
+            >
+              <AlignHorizontalJustifyCenter :size="16" />
+            </button>
+            <button
+              class="align-btn"
+              title="Centralizar na vertical"
+              @click="editorStore.centerSelected('v')"
+            >
+              <AlignVerticalJustifyCenter :size="16" />
+            </button>
+            <button
+              class="align-btn accent"
+              title="Centralizar (ambos)"
+              @click="editorStore.centerSelected('both')"
+            >
+              <Crosshair :size="16" />
+            </button>
+          </div>
+        </div>
+
         <PropSlider label="X" unit="px" :min="0" :max="800" v-model="el.properties.x" @change="save" />
         <PropSlider label="Y" unit="px" :min="0" :max="600" v-model="el.properties.y" @change="save" />
         <PropSlider label="Largura" unit="px" :min="1" :max="800" v-model="el.properties.width" :disabled="el.type === 'label'" @change="save" />
@@ -379,6 +415,41 @@ select:focus {
   font-style: italic;
   color: var(--accent);
   font-size: 10px;
+}
+.align-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.align-label {
+  font-size: 11px;
+  color: var(--text-soft);
+}
+.align-btns {
+  display: flex;
+  gap: 5px;
+}
+.align-btn {
+  width: 30px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.align-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.align-btn.accent:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 .group .field input {
   background: var(--surface);
