@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Boxes, FolderTree, ImageUp } from "lucide-vue-next";
+import { Boxes, FolderTree, ImageUp, CornerLeftUp } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
 import {
   ELEMENT_DEFINITIONS,
@@ -24,6 +24,16 @@ const handleAddElement = (type: UIElementType) => {
     return;
   }
   editorStore.addElement(type);
+};
+
+// --- SOLTAR NA RAIZ (tirar do container) ---
+const rootOver = ref(false);
+const onDropRoot = (event: DragEvent) => {
+  rootOver.value = false;
+  const dragId =
+    event.dataTransfer?.getData("text/plain") || editorStore.draggingId;
+  editorStore.draggingId = null;
+  if (dragId) editorStore.moveElement(dragId, null, "inside");
 };
 
 // --- IMPORTAR IMAGEM DE FUNDO ---
@@ -126,11 +136,43 @@ const onBackgroundFile = async (e: Event) => {
           :depth="0"
         />
       </ul>
+
+      <!-- Soltar aqui tira o elemento de qualquer container e leva para a raiz -->
+      <div
+        v-if="editorStore.draggingId"
+        class="root-drop"
+        :class="{ over: rootOver }"
+        @dragover.prevent="rootOver = true"
+        @dragleave="rootOver = false"
+        @drop.prevent="onDropRoot"
+      >
+        <CornerLeftUp :size="14" />
+        soltar aqui para tirar do container
+      </div>
     </div>
   </aside>
 </template>
 
 <style scoped>
+.root-drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 12px 10px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-faint);
+  font-size: 11.5px;
+  text-align: center;
+}
+.root-drop.over {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
 .bg-btn {
   display: flex;
   align-items: center;
