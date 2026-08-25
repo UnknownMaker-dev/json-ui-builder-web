@@ -14,7 +14,7 @@
  * armadilha "item duplicado" do JSON-UI.md, seção 3).
  */
 import { exportConfig as CFG } from "../config/export.config";
-import type { UIElement, UIProperties } from "../types/element.types";
+import type { StackAlign, UIElement, UIProperties } from "../types/element.types";
 import { ELEMENT_DEFINITIONS } from "../types/element.types";
 import { buildButtonIndexMap } from "./form-buttons";
 import {
@@ -228,11 +228,29 @@ function elementToJsonUi(
   }
 }
 
+/**
+ * Âncora que alinha um filho no eixo TRANSVERSAL do stack_panel.
+ *
+ * O stack_panel só decide o eixo principal (a ordem da pilha); o outro eixo
+ * fica por conta da âncora do filho. Num stack vertical o eixo livre é o
+ * horizontal, num horizontal é o vertical.
+ */
+function stackAnchor(align: StackAlign | undefined, horizontal: boolean): string {
+  const a = align ?? "start";
+  if (horizontal) {
+    // Pilha na horizontal: sobra o eixo vertical.
+    return a === "center" ? "left_middle" : a === "end" ? "bottom_left" : "top_left";
+  }
+  // Pilha na vertical: sobra o eixo horizontal.
+  return a === "center" ? "top_middle" : a === "end" ? "top_right" : "top_left";
+}
+
 /** Percorre a árvore recursivamente e monta o mapa de nós JSON UI. */
 function buildTree(
   nodes: UIElement[],
   ctx: BuildCtx,
   parentIsStack = false,
+  stackIsHorizontal = false,
 ): Record<string, any> {
   const out: Record<string, any> = {};
 
@@ -245,15 +263,24 @@ function buildTree(
     const { json, link, continuePath } = elementToJsonUi(el, ctx);
     const def = ELEMENT_DEFINITIONS[el.type];
 
-    // Filho de stack_panel: o Minecraft posiciona sozinho — zera o offset.
+    // Filho de stack_panel: o Minecraft posiciona sozinho no eixo da pilha —
+    // zera o offset e deixa a ÂNCORA cuidar do eixo transversal.
     if (parentIsStack) {
       if ("offset" in json) json.offset = [0, 0];
       if ("$button_offset" in json) json.$button_offset = [0, 0];
+      const anchor = stackAnchor(el.properties.stackAlign, stackIsHorizontal);
+      json.anchor_from = anchor;
+      json.anchor_to = anchor;
     }
 
     if (continuePath && def.isContainer && el.children.length) {
       json.controls = Object.entries(
-        buildTree(el.children, ctx, el.type === "stackPanel"),
+        buildTree(
+          el.children,
+          ctx,
+          el.type === "stackPanel",
+          el.properties.orientation === "horizontal",
+        ),
       ).map(([k, v]) => ({ [k]: v }));
     }
 
