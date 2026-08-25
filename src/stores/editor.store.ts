@@ -8,6 +8,7 @@ import {
   type UIElementType,
 } from "../types/element.types";
 import { toNamespace, type UIScreen } from "../types/screen.types";
+import { watch } from "vue";
 
 // Reexporta para compatibilidade com imports antigos (`import { UIElement } from stores`).
 export type { UIElement } from "../types/element.types";
@@ -25,9 +26,39 @@ function newScreen(name: string): UIScreen {
   };
 }
 
+/**
+ * Rascunho no navegador.
+ *
+ * O editor não tem backend: sem isto, recarregar a página apagava todas as
+ * telas. É rascunho, não substitui salvar o projeto em arquivo — limpar os
+ * dados do site leva junto.
+ */
+const DRAFT_KEY = "jsonui_draft";
+
+interface Draft {
+  screens: UIScreen[];
+  packName: string;
+  triggerItem: string;
+  scriptApi: ScriptApi;
+}
+
+function readDraft(): Draft | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    if (!Array.isArray(d?.screens) || d.screens.length === 0) return null;
+    return d;
+  } catch {
+    return null;
+  }
+}
+
 export const useEditorStore = defineStore("editor", () => {
+  const draft = readDraft();
+
   // --- TELAS (ABAS) ---
-  const screens = ref<UIScreen[]>([newScreen("Custom UI")]);
+  const screens = ref<UIScreen[]>(draft?.screens ?? [newScreen("Custom UI")]);
   const activeScreenId = ref<string>(screens.value[0].id);
 
   const activeScreen = computed<UIScreen>(
@@ -54,11 +85,11 @@ export const useEditorStore = defineStore("editor", () => {
 
   // --- PROJETO / PACOTE ---
   /** Nome do pacote mostrado na lista de recursos do Minecraft. */
-  const packName = ref<string>("Meu Pack de UI");
+  const packName = ref<string>(draft?.packName ?? "Meu Pack de UI");
   /** Item que abre o menu no script gerado. */
-  const triggerItem = ref<string>("minecraft:stick");
+  const triggerItem = ref<string>(draft?.triggerItem ?? "minecraft:stick");
   /** Versão da API de script declarada no manifest do behavior pack. */
-  const scriptApi = ref<ScriptApi>("2.x");
+  const scriptApi = ref<ScriptApi>(draft?.scriptApi ?? "2.x");
 
   /** Compatibilidade: o namespace do JSON UI é o da tela ativa. */
   const projectNamespace = computed<string>({
@@ -454,6 +485,31 @@ export const useEditorStore = defineStore("editor", () => {
     selectElement(clonedElement.id);
     saveSnapshot();
   }
+
+  // Guarda o rascunho a cada mudança, sem travar a digitação.
+  let draftTimer: ReturnType<typeof setTimeout> | undefined;
+  watch(
+    [screens, packName, triggerItem, scriptApi],
+    () => {
+      clearTimeout(draftTimer);
+      draftTimer = setTimeout(() => {
+        try {
+          localStorage.setItem(
+            DRAFT_KEY,
+            JSON.stringify({
+              screens: screens.value,
+              packName: packName.value,
+              triggerItem: triggerItem.value,
+              scriptApi: scriptApi.value,
+            }),
+          );
+        } catch {
+          // Sem espaço ou sem localStorage: o editor segue, só perde o rascunho.
+        }
+      }, 400);
+    },
+    { deep: true },
+  );
 
   return {
     // telas
