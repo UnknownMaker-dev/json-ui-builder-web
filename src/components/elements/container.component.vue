@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { assetUrl } from "../../utils/asset-url";
 /**
  * Container genérico para stack_panel, collection_panel e scrolling_panel.
  * Renderiza uma textura de fundo opcional, um contorno tracejado indicando o
@@ -21,7 +22,7 @@ const labels: Record<string, string> = {
   <div class="mc-container" :class="element.type">
     <TextureRenderer
       v-if="element.properties.texture"
-      :src="element.properties.texture"
+      :src="assetUrl(element.properties.texture)"
       :nineslice="element.properties.nineslice"
       :width="element.properties.width"
       :height="element.properties.height"

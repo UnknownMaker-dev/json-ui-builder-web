@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
 import { Nineslice } from "../../utils/nineslice";
+import { assetUrl } from "../../utils/asset-url";
 
 const props = defineProps<{
   src?: string;
@@ -43,7 +44,7 @@ const loadNinesliceInfo = async (src: string): Promise<NsInfo> => {
   let info: NsInfo = null;
   if (!src.startsWith("data:") && /\.png$/i.test(src)) {
     try {
-      const res = await fetch(src.replace(/\.png$/i, ".json"));
+      const res = await fetch(assetUrl(src.replace(/\.png$/i, ".json")));
       if (res.ok) {
         const raw = await res.json();
         if (raw?.base_size != null && raw?.nineslice_size != null) {

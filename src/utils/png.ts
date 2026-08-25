@@ -6,6 +6,8 @@
  * do preset, a dimensão é lida aqui em vez de confiar no que o editor achava.
  */
 
+import { assetUrl } from "./asset-url";
+
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 /** Extrai [largura, altura] do IHDR. Retorna null se não for um PNG válido. */
@@ -35,7 +37,7 @@ export function dataUrlToBytes(dataUrl: string): Uint8Array {
 /** Baixa qualquer URL (data: ou http) como bytes. */
 export async function fetchBytes(url: string): Promise<Uint8Array> {
   if (url.startsWith("data:")) return dataUrlToBytes(url);
-  const res = await fetch(url);
+  const res = await fetch(assetUrl(url));
   if (!res.ok) throw new Error(`Falha ao ler ${url}: HTTP ${res.status}`);
   return new Uint8Array(await res.arrayBuffer());
 }

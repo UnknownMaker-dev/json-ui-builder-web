@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { assetUrl } from "../../utils/asset-url";
 import { ref, computed } from "vue";
 import {
   SlidersHorizontal,
@@ -258,7 +259,7 @@ const stateLabels: Record<string, string> = {
       <div class="field" v-if="hasTexture">
         <label>Textura</label>
         <button class="tex-slot" @click="openPicker('texture')">
-          <img v-if="el.properties.texture" :src="el.properties.texture" />
+          <img v-if="el.properties.texture" :src="assetUrl(el.properties.texture)" />
           <span v-else class="tex-empty"><ImagePlus :size="18" /> escolher</span>
         </button>
       </div>
@@ -272,7 +273,7 @@ const stateLabels: Record<string, string> = {
             :key="s"
           >
             <button class="tex-slot square" @click="openPicker(s)">
-              <img v-if="el.properties[s]" :src="el.properties[s]" />
+              <img v-if="el.properties[s]" :src="assetUrl(el.properties[s])" />
               <span v-else class="tex-empty"><ImagePlus :size="16" /></span>
             </button>
             <span class="tex-state-label">{{ stateLabels[s] }}</span>
@@ -286,7 +287,7 @@ const stateLabels: Record<string, string> = {
             <button class="tex-slot square" @click="openPicker('iconTexture')">
               <img
                 v-if="el.properties.iconTexture"
-                :src="el.properties.iconTexture"
+                :src="assetUrl(el.properties.iconTexture)"
               />
               <span v-else class="tex-empty"><ImagePlus :size="16" /></span>
             </button>
