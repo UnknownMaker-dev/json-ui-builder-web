@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { assetUrl } from "../../utils/asset-url";
 import type { UIElement } from "../../stores/editor.store.ts";
 import TextureRenderer from "./texture-renderer.component.vue";
 
@@ -8,7 +9,7 @@ defineProps<{ element: UIElement }>();
 <template>
   <div class="mc-panel">
     <TextureRenderer
-      :src="element.properties.texture"
+      :src="assetUrl(element.properties.texture)"
       :nineslice="element.properties.nineslice"
       :width="element.properties.width"
       :height="element.properties.height"

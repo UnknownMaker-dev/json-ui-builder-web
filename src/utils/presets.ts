@@ -10,6 +10,8 @@
  * nineslice), guardadas localmente no navegador (localStorage, base64).
  */
 
+import { assetUrl } from "./asset-url";
+
 /** Estilos embarcados conhecidos (pastas em public/presets/textures). */
 export const BUILTIN_PRESET_STYLES = [
   "other_ore-ui_style",
@@ -43,7 +45,7 @@ export async function loadPresetStyle(style: string): Promise<TextureEntry[]> {
   if (cache.has(style)) return cache.get(style)!;
   const base = `/presets/textures/${style}`;
   try {
-    const res = await fetch(`${base}/mapping.json`);
+    const res = await fetch(assetUrl(`${base}/mapping.json`));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const mapping = (await res.json()) as MappingFile;
     const entries: TextureEntry[] = (mapping.data ?? []).map((d) => ({
@@ -83,7 +85,7 @@ export async function loadNinesliceData(
   }
   const jsonUrl = entry.url.replace(/\.png$/i, ".json");
   try {
-    const res = await fetch(jsonUrl);
+    const res = await fetch(assetUrl(jsonUrl));
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -103,7 +105,7 @@ export async function loadNinesliceFor(
   if (stored) return stored.ninesliceData ?? null;
   if (url.startsWith("data:")) return null;
   try {
-    const res = await fetch(url.replace(/\.png$/i, ".json"));
+    const res = await fetch(assetUrl(url.replace(/\.png$/i, ".json")));
     if (!res.ok) return null;
     return await res.json();
   } catch {

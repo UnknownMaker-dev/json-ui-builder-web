@@ -20,6 +20,7 @@ import { exportToJsonUiString, type TextureResolver } from "./json-ui-exporter";
 import { serverFormTemplate, type ScreenRoute } from "./json-ui-templates";
 import { generateScript } from "./scripter";
 import { fetchBytes, readPngSize } from "./png";
+import { assetUrl } from "./asset-url";
 import { getCustomTextures } from "./presets";
 
 export type ScriptApi = "1.x" | "2.x";
@@ -221,7 +222,7 @@ async function resolveNineslice(
 
   if (!url.startsWith("data:")) {
     try {
-      const res = await fetch(url.replace(/\.png$/i, ".json"));
+      const res = await fetch(assetUrl(url.replace(/\.png$/i, ".json")));
       if (res.ok) {
         const data = await res.json();
         if (data?.nineslice_size != null) return data.nineslice_size;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { assetUrl } from "../../utils/asset-url";
 /**
  * Seletor visual de texturas: presets embarcados (por estilo) + texturas do
  * usuário. Upload local (PNG + JSON de nineslice opcional).
@@ -111,7 +112,7 @@ const styleLabel = (style: string) =>
               :title="tex.name"
               @click="select(tex)"
             >
-              <div class="tex-thumb"><img :src="tex.url" :alt="tex.name" /></div>
+              <div class="tex-thumb"><img :src="assetUrl(tex.url)" :alt="tex.name" /></div>
               <span class="tex-name">{{ tex.name }}</span>
               <span v-if="tex.nineslice" class="badge">9</span>
               <span
