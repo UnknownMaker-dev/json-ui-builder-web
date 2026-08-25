@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import {
   ELEMENT_DEFINITIONS,
   isContainer,
+  type StackAlign,
   type UIElement,
   type UIElementType,
 } from "../types/element.types";
@@ -316,14 +317,30 @@ export const useEditorStore = defineStore("editor", () => {
 
     if (parent && parent.type === "stackPanel") {
       const horizontal = parent.properties.orientation === "horizontal";
+
+      // Eixo da pilha: as setas reordenam.
       const step = horizontal ? dx : dy;
-      if (step === 0) return;
-      const idx = parent.children.findIndex((c) => c.id === el.id);
-      const ni = idx + (step > 0 ? 1 : -1);
-      if (ni >= 0 && ni < parent.children.length) {
-        parent.children.splice(idx, 1);
-        parent.children.splice(ni, 0, el);
-        saveSnapshot();
+      if (step !== 0) {
+        const idx = parent.children.findIndex((c) => c.id === el.id);
+        const ni = idx + (step > 0 ? 1 : -1);
+        if (ni >= 0 && ni < parent.children.length) {
+          parent.children.splice(idx, 1);
+          parent.children.splice(ni, 0, el);
+          saveSnapshot();
+        }
+        return;
+      }
+
+      // Eixo transversal: as setas mudam o alinhamento.
+      const cross = horizontal ? dy : dx;
+      if (cross !== 0) {
+        const order: StackAlign[] = ["start", "center", "end"];
+        const at = order.indexOf(el.properties.stackAlign ?? "start");
+        const next = order[Math.min(order.length - 1, Math.max(0, at + Math.sign(cross)))];
+        if (next !== el.properties.stackAlign) {
+          el.properties.stackAlign = next;
+          saveSnapshot();
+        }
       }
       return;
     }

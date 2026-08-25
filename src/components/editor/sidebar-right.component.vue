@@ -9,6 +9,12 @@ import {
   MousePointer2,
   AlignHorizontalJustifyCenter,
   AlignVerticalJustifyCenter,
+  AlignStartVertical,
+  AlignCenterVertical,
+  AlignEndVertical,
+  AlignStartHorizontal,
+  AlignCenterHorizontal,
+  AlignEndHorizontal,
   Crosshair,
 } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
@@ -18,6 +24,7 @@ import TexturePicker from "./texture-picker.component.vue";
 import { loadNinesliceFor } from "../../utils/presets";
 import BindingsEditor from "./bindings-editor.component.vue";
 import PropSlider from "./prop-slider.component.vue";
+import type { StackAlign } from "../../types/element.types";
 
 const editorStore = useEditorStore();
 const el = computed(() => editorStore.selectedElement);
@@ -64,6 +71,38 @@ const showBindings = ref(false);
 const canCenter = computed(
   () => editorStore.selectedParent?.type !== "stackPanel",
 );
+
+/**
+ * Filho de stack_panel não tem x/y livre — mas tem o eixo TRANSVERSAL livre.
+ * Numa pilha vertical dá para alinhar à esquerda, ao centro ou à direita;
+ * numa horizontal, ao topo, ao meio ou à base.
+ */
+const inStack = computed(
+  () => editorStore.selectedParent?.type === "stackPanel",
+);
+const stackIsHorizontal = computed(
+  () => editorStore.selectedParent?.properties.orientation === "horizontal",
+);
+
+const stackAlignOptions = computed(() =>
+  stackIsHorizontal.value
+    ? [
+        { value: "start", label: "Topo", icon: AlignStartHorizontal },
+        { value: "center", label: "Meio", icon: AlignCenterHorizontal },
+        { value: "end", label: "Base", icon: AlignEndHorizontal },
+      ]
+    : [
+        { value: "start", label: "Esquerda", icon: AlignStartVertical },
+        { value: "center", label: "Centro", icon: AlignCenterVertical },
+        { value: "end", label: "Direita", icon: AlignEndVertical },
+      ],
+);
+
+const setStackAlign = (value: string) => {
+  if (!el.value) return;
+  el.value.properties.stackAlign = value as StackAlign;
+  save();
+};
 
 const stateLabels: Record<string, string> = {
   defaultTexture: "Default",
@@ -240,8 +279,32 @@ const stateLabels: Record<string, string> = {
           </div>
         </div>
 
-        <PropSlider label="X" unit="px" :min="0" :max="800" v-model="el.properties.x" @change="save" />
-        <PropSlider label="Y" unit="px" :min="0" :max="600" v-model="el.properties.y" @change="save" />
+        <div class="align-row stack-align" v-if="inStack">
+          <span class="align-label">
+            Alinhar na pilha
+            <em>{{ stackIsHorizontal ? "pilha horizontal" : "pilha vertical" }}</em>
+          </span>
+          <div class="align-btns">
+            <button
+              v-for="opt in stackAlignOptions"
+              :key="opt.value"
+              class="align-btn"
+              :class="{ accent: (el.properties.stackAlign ?? 'start') === opt.value }"
+              :title="opt.label"
+              @click="setStackAlign(opt.value)"
+            >
+              <component :is="opt.icon" :size="16" />
+            </button>
+          </div>
+        </div>
+
+        <p class="stack-note" v-if="inStack">
+          O {{ stackIsHorizontal ? "X" : "Y" }} é decidido pela ordem na pilha —
+          use as setas para reordenar.
+        </p>
+
+        <PropSlider label="X" unit="px" :min="0" :max="800" v-model="el.properties.x" @change="save" :disabled="inStack" />
+        <PropSlider label="Y" unit="px" :min="0" :max="600" v-model="el.properties.y" @change="save" :disabled="inStack" />
         <PropSlider label="Largura" unit="px" :min="1" :max="800" v-model="el.properties.width" :disabled="el.type === 'label'" @change="save" />
         <PropSlider label="Altura" unit="px" :min="1" :max="600" v-model="el.properties.height" :disabled="el.type === 'label'" @change="save" />
       </div>
@@ -273,6 +336,23 @@ const stateLabels: Record<string, string> = {
 </template>
 
 <style scoped>
+.stack-align .align-label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.stack-align .align-label em {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+}
+.stack-note {
+  margin: 0 0 10px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
 .icon-row {
   display: flex;
   gap: 10px;

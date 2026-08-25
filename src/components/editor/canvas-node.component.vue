@@ -27,6 +27,13 @@ const bounds = () =>
 // Espaçamento entre itens empilhados (px).
 const STACK_GAP = 2;
 
+/** Quanto do espaço que sobra fica ANTES do elemento, por alinhamento. */
+const ALIGN_FACTOR: Record<string, number> = {
+  start: 0,
+  center: 0.5,
+  end: 1,
+};
+
 /**
  * Se este elemento é filho de um stack_panel, sua posição é DERIVADA da pilha
  * (empilhado na direção da orientação), não do x/y livre. Retorna null caso
@@ -37,12 +44,23 @@ const stackLayout = computed(() => {
   if (!p || p.type !== "stackPanel") return null;
   const horizontal = p.properties.orientation === "horizontal";
   const idx = p.children.findIndex((c) => c.id === props.element.id);
+
+  // Eixo principal: a soma do que veio antes na pilha.
   let main = 0;
   for (let i = 0; i < idx; i++) {
     const s = p.children[i].properties;
     main += (horizontal ? s.width : s.height) + STACK_GAP;
   }
-  return { horizontal, main };
+
+  // Eixo transversal: livre, decidido pelo alinhamento do próprio elemento.
+  const own = props.element.properties;
+  const room = horizontal
+    ? p.properties.height - own.height
+    : p.properties.width - own.width;
+  const factor = ALIGN_FACTOR[own.stackAlign ?? "start"];
+  const cross = Math.round(Math.max(0, room) * factor);
+
+  return { horizontal, main, cross };
 });
 
 /** Estilo de posição/tamanho do wrapper (usa a pilha quando aplicável). */
@@ -51,8 +69,8 @@ const wrapperStyle = computed(() => {
   const sl = stackLayout.value;
   if (sl) {
     return {
-      left: (sl.horizontal ? sl.main : 0) + "px",
-      top: (sl.horizontal ? 0 : sl.main) + "px",
+      left: (sl.horizontal ? sl.main : sl.cross) + "px",
+      top: (sl.horizontal ? sl.cross : sl.main) + "px",
       width: pr.width + "px",
       height: pr.height + "px",
     };

@@ -16,6 +16,9 @@ import {
   Type,
 } from "lucide-vue-next";
 
+/** Alinhamento no eixo transversal de um stack_panel. */
+export type StackAlign = "start" | "center" | "end";
+
 /** Um binding de dados do JSON UI (ligação a valores dinâmicos do Minecraft). */
 export interface UIBinding {
   binding_type?: "global" | "view" | "collection" | "collection_details" | "none";
@@ -61,6 +64,13 @@ export interface UIProperties {
 
   // Stack panel
   orientation?: "vertical" | "horizontal";
+  /**
+   * Alinhamento DESTE elemento no eixo transversal do stack_panel pai.
+   * Num stack vertical o eixo transversal é o horizontal (esquerda/centro/
+   * direita); num horizontal é o vertical (topo/meio/base). O eixo principal
+   * continua sendo a ordem na pilha, que o Minecraft resolve sozinho.
+   */
+  stackAlign?: StackAlign;
 
   // Collection panel
   collectionName?: string;
