@@ -24,8 +24,13 @@ const bounds = () =>
     ? { w: props.parent.properties.width, h: props.parent.properties.height }
     : { w: CANVAS_W, h: CANVAS_H };
 
-// Espaçamento entre itens empilhados (px).
-const STACK_GAP = 2;
+/**
+ * Espaçamento entre itens empilhados (px).
+ *
+ * Zero de propósito: o stack_panel do Minecraft encosta um filho no outro. Um
+ * respiro só no editor faria a prévia mentir sobre a posição final.
+ */
+const STACK_GAP = 0;
 
 /** Quanto do espaço que sobra fica ANTES do elemento, por alinhamento. */
 const ALIGN_FACTOR: Record<string, number> = {
@@ -51,6 +56,16 @@ const stackLayout = computed(() => {
     const s = p.children[i].properties;
     main += (horizontal ? s.width : s.height) + STACK_GAP;
   }
+
+  // Eixo da pilha: o bloco inteiro de filhos pode ser deslocado junto.
+  const content = p.children.reduce(
+    (sum, c, i) =>
+      sum + (horizontal ? c.properties.width : c.properties.height) + (i ? STACK_GAP : 0),
+    0,
+  );
+  const slack = (horizontal ? p.properties.width : p.properties.height) - content;
+  const justify = ALIGN_FACTOR[p.properties.stackJustify ?? "start"];
+  main += Math.round(Math.max(0, slack) * justify);
 
   // Eixo transversal: livre, decidido pelo alinhamento do próprio elemento.
   const own = props.element.properties;

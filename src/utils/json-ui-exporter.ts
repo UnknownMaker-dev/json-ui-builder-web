@@ -245,6 +245,47 @@ function stackAnchor(align: StackAlign | undefined, horizontal: boolean): string
   return a === "center" ? "top_middle" : a === "end" ? "top_right" : "top_left";
 }
 
+/**
+ * Âncora que distribui a pilha inteira dentro do panel do tamanho desenhado.
+ * Aqui o eixo que importa é o DA pilha; o outro é neutralizado porque a pilha
+ * interna ocupa 100% dele.
+ */
+function justifyAnchor(align: StackAlign, horizontal: boolean): string {
+  if (align === "center") return "center";
+  if (horizontal) return align === "end" ? "top_right" : "top_left";
+  return align === "end" ? "bottom_left" : "top_left";
+}
+
+/**
+ * Aplica a distribuição no eixo da pilha.
+ *
+ * JSON UI não tem "justify-content". O jeito que funciona é encolher o
+ * stack_panel até o conteúdo (`100%c` no eixo da pilha, seção 6 do JSON-UI.md)
+ * e ancorá-lo dentro de um panel do tamanho que foi desenhado — num panel a
+ * âncora vale nos dois eixos, num stack_panel não.
+ */
+function applyJustify(json: any, el: UIElement): void {
+  const justify = el.properties.stackJustify ?? "start";
+  if (justify === "start") return;
+
+  const horizontal = el.properties.orientation === "horizontal";
+  const anchor = justifyAnchor(justify, horizontal);
+
+  const inner = {
+    type: "stack_panel",
+    orientation: json.orientation,
+    size: horizontal ? ["100%c", "100%"] : ["100%", "100%c"],
+    anchor_from: anchor,
+    anchor_to: anchor,
+    controls: json.controls ?? [],
+  };
+
+  // O nó desenhado vira o panel-moldura; a pilha de verdade passa a ser filha.
+  delete json.orientation;
+  json.type = "panel";
+  json.controls = [{ [`${shortId()}-stack_inner`]: inner }];
+}
+
 /** Percorre a árvore recursivamente e monta o mapa de nós JSON UI. */
 function buildTree(
   nodes: UIElement[],
@@ -283,6 +324,8 @@ function buildTree(
         ),
       ).map(([k, v]) => ({ [k]: v }));
     }
+
+    if (el.type === "stackPanel") applyJustify(json, el);
 
     out[`${shortId()}-${el.type}${link}`] = json;
   }
