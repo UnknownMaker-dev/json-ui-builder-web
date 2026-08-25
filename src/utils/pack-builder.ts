@@ -456,9 +456,9 @@ Inserir um botão no meio desloca todos os índices seguintes.
 
 FORMULÁRIOS QUE NÃO SÃO SEUS
 Enquanto este pack estiver ativo, um formulário cujo título não bate com
-nenhuma tela daqui mostra só o título e o texto, sem os botões. O pack precisa
-substituir ui/server_form.json inteiro para poder rotear, e redesenhar os
-botões genéricos à mão custaria um erro no log a cada formulário aberto.
+nenhuma tela daqui abre vazio. O pack precisa substituir ui/server_form.json
+inteiro para poder rotear, e o arquivo agora só roteia. Se precisar de
+formulários comuns no mesmo mundo, desative o resource pack.
 
 SE NÃO APARECER NADA
 - Confira se os dois packs estão ativos e as Beta APIs ligadas.
