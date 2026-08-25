@@ -322,7 +322,7 @@ function applyStackBox(json: any, el: UIElement): void {
     ? [justify === "end" ? -p : p, p]
     : [p, justify === "end" ? -p : p];
 
-  const inner = {
+  const inner: any = {
     type: "stack_panel",
     orientation: json.orientation,
     size: horizontal ? ["100%c", inset] : [inset, "100%c"],
@@ -331,6 +331,12 @@ function applyStackBox(json: any, el: UIElement): void {
     offset: justify === "center" ? [0, 0] : offset,
     controls: json.controls ?? [],
   };
+
+  // O escopo da coleção tem que acompanhar os filhos para dentro da moldura.
+  if (json.collection_name) {
+    inner.collection_name = json.collection_name;
+    delete json.collection_name;
+  }
 
   // O nó desenhado vira o panel-moldura; a pilha de verdade passa a ser filha.
   delete json.orientation;
@@ -364,6 +370,15 @@ function buildTree(
       const anchor = stackAnchor(el.properties.stackAlign, stackIsHorizontal);
       json.anchor_from = anchor;
       json.anchor_to = anchor;
+    }
+
+    // O `collection_index` do botão só é aceito se um pai declarar de qual
+    // coleção ele vem (JSON-UI.md, seção 10). Sem isso o jogo derruba a
+    // propriedade com "Unknown property [collection_index]" e o botão para de
+    // responder ao formulário. Marcamos o pai DIRETO, para o escopo ficar no
+    // menor pedaço possível da árvore.
+    if (el.children.some((c) => c.type === "button")) {
+      json.collection_name = CFG.defaultCollectionName;
     }
 
     if (continuePath && def.isContainer && el.children.length) {
@@ -459,6 +474,9 @@ export function exportToJsonUiObject(
   Object.assign(tree, ctx.hoisted);
 
   // A tela: um panel do tamanho do canvas, centralizado na tela do jogo.
+  //
+  // Se houver botão solto na raiz, ela também precisa abrir o escopo da coleção.
+  const hasButtons = elements.some((e) => e.type === "button");
   tree[namespace] = {
     type: "panel",
     size: [r3(CFG.CANVAS_W * S), r3(CFG.CANVAS_H * S)],
@@ -466,6 +484,7 @@ export function exportToJsonUiObject(
     anchor_to: "center",
     offset: [0, 0],
     layer: CFG.SCREEN_LAYER,
+    ...(hasButtons ? { collection_name: CFG.defaultCollectionName } : {}),
     controls,
   };
 

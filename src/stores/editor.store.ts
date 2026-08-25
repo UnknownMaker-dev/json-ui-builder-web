@@ -58,7 +58,7 @@ export const useEditorStore = defineStore("editor", () => {
   /** Item que abre o menu no script gerado. */
   const triggerItem = ref<string>("minecraft:stick");
   /** Versão da API de script declarada no manifest do behavior pack. */
-  const scriptApi = ref<ScriptApi>("1.x");
+  const scriptApi = ref<ScriptApi>("2.x");
 
   /** Compatibilidade: o namespace do JSON UI é o da tela ativa. */
   const projectNamespace = computed<string>({
