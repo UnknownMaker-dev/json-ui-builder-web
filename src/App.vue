@@ -6,6 +6,7 @@ import toolbarComponent from "./components/editor/toolbar.component.vue";
 import sidebarleftComponent from "./components/editor/sidebar-left.component.vue";
 import sidebarrightComponent from "./components/editor/sidebar-right.component.vue";
 import canvasareaComponent from "./components/editor/canvas-area.component.vue";
+import screentabsComponent from "./components/editor/screen-tabs.component.vue";
 
 const editorStore = useEditorStore();
 
@@ -30,6 +31,7 @@ const closeDrawers = () => {
 <template>
   <div class="app-shell">
     <toolbarComponent />
+    <screentabsComponent />
 
     <div class="editor-layout">
       <sidebarleftComponent class="drawer-left" :class="{ open: leftOpen }" />

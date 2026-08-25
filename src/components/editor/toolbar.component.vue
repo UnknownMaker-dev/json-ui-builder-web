@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Barra de ferramentas superior: namespace do projeto, undo/redo, e as ações
- * de exportação (JSON UI, scripts TS/JS, server_form) e importação.
+ * Barra de ferramentas superior: nome do pacote, undo/redo, e as ações de
+ * exportação (pacote pronto, JSON UI avulso, script) e importação.
  */
 import { ref } from "vue";
 import {
@@ -14,16 +14,21 @@ import {
   BookOpen,
   Lock,
   Unlock,
+  Package,
 } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
 import { exportToJsonUiString } from "../../utils/json-ui-exporter";
 import { importFromJsonUi } from "../../utils/json-ui-importer";
-import { generateScript, generateServerForm } from "../../utils/scripter";
+import { serverFormTemplate } from "../../utils/json-ui-templates";
+import { generateScript } from "../../utils/scripter";
+import { sanitizeFlag } from "../../types/screen.types";
 import OutputModal from "./output-modal.component.vue";
+import PackModal from "./pack-modal.component.vue";
 import Wiki from "./wiki.component.vue";
 
 const editorStore = useEditorStore();
 const showWiki = ref(false);
+const showPack = ref(false);
 
 const output = ref<{ title: string; content: string; filename: string } | null>(
   null,
@@ -31,27 +36,34 @@ const output = ref<{ title: string; content: string; filename: string } | null>(
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const exportJsonUi = () => {
+  const screen = editorStore.activeScreen;
   output.value = {
-    title: "JSON UI",
-    content: exportToJsonUiString(editorStore.elements, {
-      namespace: editorStore.projectNamespace,
+    title: `JSON UI — ${screen.name}`,
+    content: exportToJsonUiString(screen.elements, {
+      namespace: screen.namespace,
     }),
-    filename: `${editorStore.projectNamespace}.json`,
+    filename: `${screen.namespace}.json`,
   };
 };
 
 const exportScript = (lang: "ts" | "js") => {
   output.value = {
     title: `Script (${lang.toUpperCase()})`,
-    content: generateScript(editorStore.elements, lang),
+    content: generateScript(editorStore.screens, lang, {
+      triggerItem: editorStore.triggerItem,
+    }),
     filename: `main.${lang}`,
   };
 };
 
 const exportServerForm = () => {
+  const routes = editorStore.screens.map((s) => ({
+    flag: sanitizeFlag(s.name),
+    namespace: s.namespace,
+  }));
   output.value = {
     title: "server_form.json",
-    content: generateServerForm(editorStore.projectNamespace),
+    content: serverFormTemplate(routes),
     filename: "server_form.json",
   };
 };
@@ -81,11 +93,12 @@ const onImportFile = async (e: Event) => {
     <div class="divider"></div>
 
     <div class="ns-field">
-      <label>namespace</label>
+      <label>pacote</label>
       <input
-        v-model="editorStore.projectNamespace"
+        v-model="editorStore.packName"
         class="ns-input"
         spellcheck="false"
+        title="Nome do resource pack gerado"
       />
     </div>
 
@@ -113,8 +126,11 @@ const onImportFile = async (e: Event) => {
     </button>
 
     <div class="actions">
-      <button class="btn btn-primary" @click="exportJsonUi">
-        <Braces :size="16" /> Gerar JSON UI
+      <button class="btn btn-primary" @click="showPack = true">
+        <Package :size="16" /> Baixar pacote
+      </button>
+      <button class="btn btn-ghost" @click="exportJsonUi">
+        <Braces :size="16" /> JSON UI
       </button>
       <div class="seg">
         <button class="btn btn-ghost seg-item" @click="exportScript('ts')">TS</button>
@@ -137,6 +153,8 @@ const onImportFile = async (e: Event) => {
       :filename="output.filename"
       @close="output = null"
     />
+
+    <PackModal v-if="showPack" @close="showPack = false" />
 
     <Wiki v-if="showWiki" @close="showWiki = false" />
   </header>

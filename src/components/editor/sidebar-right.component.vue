@@ -15,6 +15,7 @@ import { useEditorStore } from "../../stores/editor.store";
 import { MINECRAFT_FONTS } from "../../config/export.config";
 import { ELEMENT_DEFINITIONS } from "../../types/element.types";
 import TexturePicker from "./texture-picker.component.vue";
+import { loadNinesliceFor } from "../../utils/presets";
 import BindingsEditor from "./bindings-editor.component.vue";
 import PropSlider from "./prop-slider.component.vue";
 
@@ -32,11 +33,23 @@ const handleDelete = () => {
 
 const pickerField = ref<string | null>(null);
 const openPicker = (field: string) => (pickerField.value = field);
-const onPick = (url: string) => {
-  if (el.value && pickerField.value) {
-    el.value.properties[pickerField.value] = url;
-    save();
+
+/**
+ * Ao escolher uma textura, adota também o nineslice que veio com ela.
+ * Os presets trazem bordas assimétricas (ex. [2,2,2,5]) no .json ao lado do
+ * PNG; sem isto o editor mostraria a moldura de um jeito e o jogo de outro.
+ */
+const onPick = async (url: string) => {
+  if (!el.value || !pickerField.value) return;
+  el.value.properties[pickerField.value] = url;
+
+  const data = await loadNinesliceFor(url);
+  if (data?.nineslice_size != null) {
+    el.value.properties.nineslice = data.nineslice_size as
+      | number
+      | [number, number, number, number];
   }
+  save();
 };
 
 const isTextType = computed(
@@ -152,6 +165,34 @@ const stateLabels: Record<string, string> = {
             <span class="tex-state-label">{{ stateLabels[s] }}</span>
           </div>
         </div>
+
+        <!-- Ícone: vem do script, não do JSON UI -->
+        <div class="field">
+          <label>Ícone do botão</label>
+          <div class="icon-row">
+            <button class="tex-slot square" @click="openPicker('iconTexture')">
+              <img
+                v-if="el.properties.iconTexture"
+                :src="el.properties.iconTexture"
+              />
+              <span v-else class="tex-empty"><ImagePlus :size="16" /></span>
+            </button>
+            <div class="icon-help">
+              <p>
+                Desenhado dentro do botão. Diferente das texturas de estado: o
+                ícone é enviado pelo script em
+                <code>form.button(texto, ícone)</code>.
+              </p>
+              <button
+                v-if="el.properties.iconTexture"
+                class="icon-clear"
+                @click="el.properties.iconTexture = undefined; save()"
+              >
+                remover ícone
+              </button>
+            </div>
+          </div>
+        </div>
       </template>
 
       <div class="field" v-if="hasTexture || el.type === 'button'">
@@ -232,6 +273,40 @@ const stateLabels: Record<string, string> = {
 </template>
 
 <style scoped>
+.icon-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.icon-help {
+  flex: 1;
+  min-width: 0;
+}
+.icon-help p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+.icon-help code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-soft);
+}
+.icon-clear {
+  margin-top: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.icon-clear:hover {
+  color: var(--danger, #f87171);
+}
 .sidebar-right {
   width: 308px;
   background-color: var(--surface);

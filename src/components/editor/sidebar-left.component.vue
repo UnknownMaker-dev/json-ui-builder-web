@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { Boxes, FolderTree } from "lucide-vue-next";
+import { ref } from "vue";
+import { Boxes, FolderTree, ImageUp } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
 import {
   ELEMENT_DEFINITIONS,
   isContainer,
+  type UIElement,
   type UIElementType,
 } from "../../types/element.types";
+import { addCustomTexture } from "../../utils/presets";
 import ExplorerItem from "./explorer-item.component.vue";
 
 const editorStore = useEditorStore();
@@ -21,6 +24,62 @@ const handleAddElement = (type: UIElementType) => {
     return;
   }
   editorStore.addElement(type);
+};
+
+// --- IMPORTAR IMAGEM DE FUNDO ---
+const bgInput = ref<HTMLInputElement | null>(null);
+const importing = ref(false);
+
+const pickBackground = () => bgInput.value?.click();
+
+/** Descobre o tamanho natural do PNG para o elemento nascer na proporção certa. */
+const naturalSize = (url: string): Promise<[number, number]> =>
+  new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve([img.naturalWidth, img.naturalHeight]);
+    img.onerror = () => resolve([400, 300]);
+    img.src = url;
+  });
+
+/**
+ * Sobe a imagem, guarda como textura do usuário e cria um `image` no fundo da
+ * tela (primeiro da lista = desenhado atrás dos outros).
+ */
+const onBackgroundFile = async (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+
+  importing.value = true;
+  try {
+    const entry = await addCustomTexture(file, null);
+    const [w, h] = await naturalSize(entry.url);
+
+    // Cabe no canvas (800x600) sem perder a proporção original.
+    const scale = Math.min(800 / w, 600 / h, 1);
+    const width = Math.round(w * scale);
+    const height = Math.round(h * scale);
+
+    const element: UIElement = {
+      id: crypto.randomUUID(),
+      type: "image",
+      name: entry.name || "Fundo",
+      properties: {
+        x: Math.round((800 - width) / 2),
+        y: Math.round((600 - height) / 2),
+        width,
+        height,
+        texture: entry.url,
+      },
+      children: [],
+    };
+    editorStore.addRootElement(element, true);
+  } catch (err) {
+    alert("Não consegui importar a imagem: " + (err instanceof Error ? err.message : err));
+  } finally {
+    importing.value = false;
+  }
 };
 </script>
 
@@ -40,6 +99,18 @@ const handleAddElement = (type: UIElementType) => {
           <span class="tool-label">{{ tool.label }}</span>
         </button>
       </div>
+
+      <button class="bg-btn" :disabled="importing" @click="pickBackground">
+        <ImageUp :size="15" />
+        {{ importing ? "Importando…" : "Importar imagem de fundo" }}
+      </button>
+      <input
+        ref="bgInput"
+        type="file"
+        accept="image/png,image/jpeg"
+        hidden
+        @change="onBackgroundFile"
+      />
     </div>
 
     <div class="section explorer-section">
@@ -60,6 +131,31 @@ const handleAddElement = (type: UIElementType) => {
 </template>
 
 <style scoped>
+.bg-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  margin-top: 9px;
+  padding: 8px 10px;
+  background: var(--accent-soft);
+  border: 1px dashed var(--accent);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+}
+.bg-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+.bg-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 .sidebar-left {
   width: 244px;
   background-color: var(--surface);

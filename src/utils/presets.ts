@@ -91,6 +91,26 @@ export async function loadNinesliceData(
   }
 }
 
+/**
+ * Busca o nineslice de uma textura por URL, seja ela preset embarcado ou envio
+ * do usuário. É o dado oficial da arte — tem prioridade sobre o que o editor
+ * tiver guardado no elemento.
+ */
+export async function loadNinesliceFor(
+  url: string,
+): Promise<{ nineslice_size: number | number[]; base_size?: unknown } | null> {
+  const stored = getCustomTextures().find((t) => t.url === url);
+  if (stored) return stored.ninesliceData ?? null;
+  if (url.startsWith("data:")) return null;
+  try {
+    const res = await fetch(url.replace(/\.png$/i, ".json"));
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Texturas enviadas pelo usuário (armazenadas localmente, sem backend)
 // ---------------------------------------------------------------------------

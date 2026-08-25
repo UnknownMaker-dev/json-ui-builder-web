@@ -25,6 +25,17 @@ export const exportConfig = {
   /** Nome da coleção usada pelos botões de formulário. */
   defaultCollectionName: "form_buttons",
 
+  /**
+   * Tamanho do canvas do editor em px. A tela exportada vira um panel deste
+   * tamanho (escalado), ancorado no centro — assim o desenho fica centralizado
+   * em qualquer resolução em vez de grudado no canto da tela.
+   */
+  CANVAS_W: 800,
+  CANVAS_H: 600,
+
+  /** Layer da tela custom: acima do diálogo padrão do formulário. */
+  SCREEN_LAYER: 100,
+
   /** Correção vertical do texto por tipo de fonte. */
   getFontScaledOffsetY(fontSize: number, fontType: string): number {
     const doubleFontSize = 2 * fontSize;
