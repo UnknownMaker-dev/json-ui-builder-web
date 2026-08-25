@@ -454,6 +454,12 @@ cair no formulário padrão.
 A ordem dos botões no script é a mesma ordem em que eles aparecem no editor.
 Inserir um botão no meio desloca todos os índices seguintes.
 
+FORMULÁRIOS QUE NÃO SÃO SEUS
+Enquanto este pack estiver ativo, um formulário cujo título não bate com
+nenhuma tela daqui mostra só o título e o texto, sem os botões. O pack precisa
+substituir ui/server_form.json inteiro para poder rotear, e redesenhar os
+botões genéricos à mão custaria um erro no log a cada formulário aberto.
+
 SE NÃO APARECER NADA
 - Confira se os dois packs estão ativos e as Beta APIs ligadas.
 - Ligue o Content Log (Configurações > Criador) para ver erro de textura ou
