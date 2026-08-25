@@ -36,6 +36,18 @@ export const exportConfig = {
   /** Layer da tela custom: acima do diálogo padrão do formulário. */
   SCREEN_LAYER: 100,
 
+  /** Troca um nome de fonte antigo pelo equivalente válido. */
+  normalizeFont(font: string | undefined): string {
+    if (!font) return "default";
+    const legacy: Record<string, string> = {
+      MinecraftRegular: "default",
+      MinecraftBold: "MinecraftSeven",
+      MinecraftItalic: "default",
+      MinecraftBoldItalic: "MinecraftSeven",
+    };
+    return legacy[font] ?? font;
+  },
+
   /** Correção vertical do texto por tipo de fonte. */
   getFontScaledOffsetY(fontSize: number, fontType: string): number {
     const doubleFontSize = 2 * fontSize;
@@ -46,13 +58,20 @@ export const exportConfig = {
 
 export type ExportConfig = typeof exportConfig;
 
-/** Tipos de fonte válidos do Minecraft (para o seletor de propriedades). */
+/**
+ * Tipos de fonte que o JSON UI aceita de verdade (JSON-UI.md, seção 12).
+ *
+ * A lista antiga oferecia MinecraftRegular/Bold/Italic/BoldItalic, que não
+ * existem: o jogo ignorava em silêncio e caía na fonte padrão.
+ */
 export const MINECRAFT_FONTS = [
-  "MinecraftRegular",
+  "default",
+  "smooth",
+  "rune",
+  "MinecraftSeven",
   "MinecraftTen",
-  "MinecraftBold",
-  "MinecraftItalic",
-  "MinecraftBoldItalic",
+  "unicode",
 ] as const;
 
 export type MinecraftFont = (typeof MINECRAFT_FONTS)[number];
+

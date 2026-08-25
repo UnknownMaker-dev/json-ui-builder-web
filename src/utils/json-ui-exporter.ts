@@ -166,13 +166,18 @@ function elementToJsonUi(
       };
 
     case "label": {
-      const fontType = p.fontType ?? "MinecraftRegular";
+      const fontType = CFG.normalizeFont(p.fontType);
       const fontSize = p.fontSize ?? 1;
       return {
         json: {
           ...base,
           type: "label",
           text: p.text ?? "",
+          // Sem `size` o label ocupa só o tamanho natural do texto, e aí
+          // `text_alignment` não tem caixa nenhuma para alinhar dentro — o
+          // texto ficava sempre grudado no offset. A altura segue "default"
+          // para o texto nunca ser cortado pela caixa desenhada no editor.
+          size: [r3(p.width * S), "default"],
           offset: [
             r3((p.x + CFG.fontOffsetX) * S),
             r3(
@@ -192,7 +197,7 @@ function elementToJsonUi(
     }
 
     case "button": {
-      const fontType = p.fontType ?? "MinecraftRegular";
+      const fontType = CFG.normalizeFont(p.fontType);
       const json: any = {
         $default_button_background_texture: ctx.tex(p.defaultTexture ?? ""),
         $hover_button_background_texture: ctx.tex(
