@@ -78,6 +78,21 @@ export interface UIProperties {
    * panel do tamanho desenhado — é o que o exporter monta.
    */
   stackJustify?: StackAlign;
+  /**
+   * Espaço entre os filhos da pilha, em px do editor.
+   *
+   * JSON UI não tem `margin` nem `gap`: o stack_panel encosta um filho no
+   * outro. O espaço é obtido intercalando painéis vazios do tamanho do vão —
+   * é o que o exporter gera.
+   */
+  stackGap?: number;
+  /** Recuo entre a borda da pilha e os filhos, em px do editor. */
+  stackPadding?: number;
+  /**
+   * Espaço extra ANTES deste elemento na pilha, em px do editor. Some com o
+   * `stackGap` do pai no mesmo painel espaçador.
+   */
+  stackMargin?: number;
 
   // Collection panel
   collectionName?: string;

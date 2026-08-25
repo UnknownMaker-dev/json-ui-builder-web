@@ -24,14 +24,6 @@ const bounds = () =>
     ? { w: props.parent.properties.width, h: props.parent.properties.height }
     : { w: CANVAS_W, h: CANVAS_H };
 
-/**
- * Espaçamento entre itens empilhados (px).
- *
- * Zero de propósito: o stack_panel do Minecraft encosta um filho no outro. Um
- * respiro só no editor faria a prévia mentir sobre a posição final.
- */
-const STACK_GAP = 0;
-
 /** Quanto do espaço que sobra fica ANTES do elemento, por alinhamento. */
 const ALIGN_FACTOR: Record<string, number> = {
   start: 0,
@@ -50,30 +42,37 @@ const stackLayout = computed(() => {
   const horizontal = p.properties.orientation === "horizontal";
   const idx = p.children.findIndex((c) => c.id === props.element.id);
 
-  // Eixo principal: a soma do que veio antes na pilha.
-  let main = 0;
+  const gap = p.properties.stackGap ?? 0;
+  const pad = p.properties.stackPadding ?? 0;
+  const sizeOf = (c: UIElement) =>
+    horizontal ? c.properties.width : c.properties.height;
+  const marginOf = (c: UIElement) => c.properties.stackMargin ?? 0;
+
+  // Eixo principal: recuo + tudo que veio antes + a margem do próprio.
+  let main = pad;
   for (let i = 0; i < idx; i++) {
-    const s = p.children[i].properties;
-    main += (horizontal ? s.width : s.height) + STACK_GAP;
+    main += marginOf(p.children[i]) + sizeOf(p.children[i]) + gap;
   }
+  main += marginOf(props.element);
 
   // Eixo da pilha: o bloco inteiro de filhos pode ser deslocado junto.
   const content = p.children.reduce(
-    (sum, c, i) =>
-      sum + (horizontal ? c.properties.width : c.properties.height) + (i ? STACK_GAP : 0),
+    (sum, c, i) => sum + marginOf(c) + sizeOf(c) + (i ? gap : 0),
     0,
   );
-  const slack = (horizontal ? p.properties.width : p.properties.height) - content;
+  const available =
+    (horizontal ? p.properties.width : p.properties.height) - pad * 2;
   const justify = ALIGN_FACTOR[p.properties.stackJustify ?? "start"];
-  main += Math.round(Math.max(0, slack) * justify);
+  main += Math.round(Math.max(0, available - content) * justify);
 
   // Eixo transversal: livre, decidido pelo alinhamento do próprio elemento.
   const own = props.element.properties;
-  const room = horizontal
-    ? p.properties.height - own.height
-    : p.properties.width - own.width;
+  const room =
+    (horizontal ? p.properties.height : p.properties.width) -
+    pad * 2 -
+    (horizontal ? own.height : own.width);
   const factor = ALIGN_FACTOR[own.stackAlign ?? "start"];
-  const cross = Math.round(Math.max(0, room) * factor);
+  const cross = pad + Math.round(Math.max(0, room) * factor);
 
   return { horizontal, main, cross };
 });
@@ -172,13 +171,15 @@ const reorderInStack = (deltaX: number, deltaY: number) => {
   const virtual = stackBaseMain.value + delta; // posição projetada na pilha
 
   // Encontra o índice de inserção comparando com o meio de cada vizinho.
+  const gap = p.properties.stackGap ?? 0;
   const others = p.children.filter((c) => c.id !== props.element.id);
-  let pos = 0;
+  let pos = p.properties.stackPadding ?? 0;
   let newIndex = 0;
   for (const o of others) {
     const sz = horizontal ? o.properties.width : o.properties.height;
+    pos += o.properties.stackMargin ?? 0;
     if (virtual < pos + sz / 2) break;
-    pos += sz + STACK_GAP;
+    pos += sz + gap;
     newIndex++;
   }
 
