@@ -140,8 +140,11 @@ const startDrag = (event: PointerEvent) => {
 
 const onDrag = (event: PointerEvent) => {
   if (!isDragging.value) return;
-  const deltaX = event.clientX - startMouseX.value;
-  const deltaY = event.clientY - startMouseY.value;
+  // O canvas é desenhado escalado pelo zoom: o movimento medido na tela precisa
+  // voltar para px do editor, senão o elemento anda menos que o mouse.
+  const z = editorStore.zoom || 1;
+  const deltaX = (event.clientX - startMouseX.value) / z;
+  const deltaY = (event.clientY - startMouseY.value) / z;
 
   // Reordenação viva dentro do stack_panel.
   if (isStackDrag.value && props.parent) {
@@ -223,8 +226,9 @@ const startResize = (event: PointerEvent, handle: string) => {
 
 const onResize = (event: PointerEvent) => {
   if (!isResizing.value) return;
-  const deltaX = event.clientX - startMouseX.value;
-  const deltaY = event.clientY - startMouseY.value;
+  const z = editorStore.zoom || 1;
+  const deltaX = (event.clientX - startMouseX.value) / z;
+  const deltaY = (event.clientY - startMouseY.value) / z;
   const handle = currentHandle.value;
 
   let newW = initialW.value;
