@@ -194,23 +194,6 @@ export function basicPanelScrollingContent(): any {
   };
 }
 
-/** Quantos botões o formulário padrão de reserva consegue mostrar. */
-const FALLBACK_SLOTS = 12;
-
-/**
- * Botão do formulário padrão de reserva (visual simples do Minecraft).
- * Cada fatia é fixa numa posição da coleção e se esconde quando o formulário
- * tem menos botões que isso.
- */
-function fallbackButton(index: number): any {
-  return {
-    [`slot_${index}@server_form.fallback_button`]: {
-      collection_index: index,
-      offset: [0, index * 22],
-    },
-  };
-}
-
 /**
  * Gera o `ui/server_form.json`.
  *
@@ -220,8 +203,15 @@ function fallbackButton(index: number): any {
  * 1. Roteia: para cada tela criada no editor, mostra o painel dela quando o
  *    título do formulário contém o nome daquela tela. O teste de "contém" é a
  *    subtração de string da seção 9 do JSON-UI.md.
- * 2. Reconstrói um formulário padrão simples para quando o título não casa com
- *    tela nenhuma — sem isso, qualquer outro formulário do mundo abriria vazio.
+ * 2. Mantém o diálogo padrão do jogo para quando o título não casa com tela
+ *    nenhuma, mostrando o texto do formulário.
+ *
+ * O corpo de reserva NÃO desenha os botões. A única forma de posicioná-los à
+ * mão seria dar `collection_index` a cada fatia, e isso só vale num controle
+ * que herda o botão do jogo — desenhar uma fileira de botões genéricos aqui
+ * enchia o log de erro em todo formulário aberto, para reconstruir algo que o
+ * jogo já fazia melhor sozinho. Enquanto o pack estiver ativo, formulários que
+ * não são seus mostram só o título e o texto.
  */
 export function serverFormTemplate(routes: ScreenRoute[]): string {
   // "Não bateu com nenhuma tela": tirar todas as chaves não mudou o título.
@@ -272,35 +262,7 @@ export function serverFormTemplate(routes: ScreenRoute[]): string {
   const doc = {
     namespace: "server_form",
 
-    // Botão de reserva: o mesmo mecanismo de coleção, com visual padrão.
-    // Mesmo motivo do custom_button: só um `button` aceita collection_index.
-    "fallback_button@common_buttons.light_content_button": {
-      size: ["100%", 20],
-      anchor_from: "top_left",
-      anchor_to: "top_left",
-      $pressed_button_name: "button.form_button_click",
-      $button_text: "#form_button_text",
-      $button_text_binding_type: "collection",
-      $button_text_grid_collection_name: "form_buttons",
-      bindings: [
-        {
-          binding_type: "collection_details",
-          binding_collection_name: "form_buttons",
-        },
-        {
-          binding_name: "#form_button_text",
-          binding_type: "collection",
-          binding_collection_name: "form_buttons",
-        },
-        {
-          binding_type: "view",
-          source_property_name: "(not (#form_button_text = ''))",
-          target_property_name: "#visible",
-        },
-      ],
-    },
-
-    // Corpo do formulário padrão: o texto e as fatias de botão.
+    // Corpo do formulário padrão: só o texto.
     //
     // stack_panel, e não panel: este controle é injetado no `inside_header_panel`
     // do diálogo padrão, que já traz `orientation` da definição do jogo. Como
@@ -320,21 +282,6 @@ export function serverFormTemplate(routes: ScreenRoute[]): string {
             text: "#form_text",
             color: [0.85, 0.85, 0.85],
             bindings: [{ binding_name: "#form_text" }],
-          },
-        },
-        {
-          buttons_area: {
-            // collection_panel: é quem pode declarar collection_name e abrir o
-            // escopo da coleção para as fatias.
-            type: "collection_panel",
-            collection_name: "form_buttons",
-            anchor_from: "top_left",
-            anchor_to: "top_left",
-            offset: [4, 26],
-            size: ["100% - 8px", "100% - 30px"],
-            controls: Array.from({ length: FALLBACK_SLOTS }, (_, i) =>
-              fallbackButton(i),
-            ),
           },
         },
       ],
