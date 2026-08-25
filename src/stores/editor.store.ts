@@ -472,6 +472,131 @@ export const useEditorStore = defineStore("editor", () => {
     saveSnapshot();
   }
 
+  // --- MOVER NA ÁRVORE (arrastar no Explorer) ---
+
+  /**
+   * Quem está sendo arrastado agora.
+   *
+   * Durante o `dragover` o navegador não deixa ler o `dataTransfer` — só no
+   * `drop` — então o id fica aqui para o Explorer conseguir validar o destino e
+   * pintar o realce enquanto o cursor passa.
+   */
+  const draggingId = ref<string | null>(null);
+
+  /** Onde soltar em relação ao alvo. */
+  type DropPosition = "before" | "inside" | "after";
+
+  /** Procura um elemento pelo id em qualquer profundidade. */
+  function findById(nodes: UIElement[], id: string): UIElement | null {
+    for (const node of nodes) {
+      if (node.id === id) return node;
+      const found = findById(node.children, id);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  /** O alvo está dentro do arrastado? Mover para dentro de si soltaria a subárvore. */
+  function contains(ancestor: UIElement, id: string): boolean {
+    if (ancestor.id === id) return true;
+    return ancestor.children.some((c) => contains(c, id));
+  }
+
+  /** Tira o elemento de onde ele estiver, devolvendo-o. */
+  function detach(id: string): UIElement | null {
+    const cut = (nodes: UIElement[]): UIElement | null => {
+      const i = nodes.findIndex((n) => n.id === id);
+      if (i !== -1) return nodes.splice(i, 1)[0];
+      for (const node of nodes) {
+        const found = cut(node.children);
+        if (found) return found;
+      }
+      return null;
+    };
+    return cut(elements.value);
+  }
+
+  /**
+   * Diz se um arrasto é permitido, e por quê não quando não é.
+   * Serve para o Explorer mostrar o alvo como inválido antes de soltar.
+   */
+  function canMove(
+    dragId: string,
+    targetId: string | null,
+    position: DropPosition,
+  ): { ok: boolean; reason?: string } {
+    if (dragId === targetId) return { ok: false };
+    const dragged = findById(elements.value, dragId);
+    if (!dragged) return { ok: false };
+
+    // Soltar na raiz é sempre válido: é o "tirar do escopo".
+    if (targetId === null) return { ok: true };
+
+    const target = findById(elements.value, targetId);
+    if (!target) return { ok: false };
+
+    if (contains(dragged, targetId)) {
+      return { ok: false, reason: "não dá para mover um elemento para dentro dele mesmo" };
+    }
+    if (position === "inside" && !isContainer(target.type)) {
+      return { ok: false, reason: `${target.name} não é um container` };
+    }
+    return { ok: true };
+  }
+
+  /**
+   * Move um elemento na árvore. `targetId` nulo solta na raiz da tela.
+   *
+   * Ao trocar de pai, a posição é reancorada: um elemento que vem de dentro de
+   * um container guardava coordenadas relativas àquele container, e manter os
+   * mesmos números jogaria ele para fora do novo pai.
+   */
+  function moveElement(
+    dragId: string,
+    targetId: string | null,
+    position: DropPosition = "inside",
+  ): boolean {
+    if (!canMove(dragId, targetId, position).ok) return false;
+
+    const oldParent = findParent(elements.value, dragId);
+    const node = detach(dragId);
+    if (!node) return false;
+
+    let newParent: UIElement | null = null;
+    if (targetId === null) {
+      elements.value.push(node);
+    } else {
+      const target = findById(elements.value, targetId);
+      if (!target) {
+        // O alvo sumiu junto com o corte: devolve para onde estava.
+        (oldParent ? oldParent.children : elements.value).push(node);
+        return false;
+      }
+      if (position === "inside") {
+        target.children.push(node);
+        newParent = target;
+      } else {
+        newParent = findParent(elements.value, targetId);
+        const siblings = newParent ? newParent.children : elements.value;
+        const i = siblings.findIndex((n) => n.id === targetId);
+        siblings.splice(position === "before" ? i : i + 1, 0, node);
+      }
+    }
+
+    if (newParent !== oldParent) reanchor(node, newParent);
+    selectElement(node.id);
+    saveSnapshot();
+    return true;
+  }
+
+  /** Traz o elemento para dentro dos limites do novo pai. */
+  function reanchor(node: UIElement, parent: UIElement | null) {
+    const bw = parent ? parent.properties.width : CANVAS_W;
+    const bh = parent ? parent.properties.height : CANVAS_H;
+    node.properties.x = clampVal(node.properties.x, 0, Math.max(0, bw - node.properties.width));
+    node.properties.y = clampVal(node.properties.y, 0, Math.max(0, bh - node.properties.height));
+  }
+
   /** Substitui toda a árvore da tela ativa (usado na importação). */
   function setElements(next: UIElement[]) {
     elements.value = next;
@@ -585,6 +710,9 @@ export const useEditorStore = defineStore("editor", () => {
     nudgeSelected,
     selectedParent,
     centerSelected,
+    moveElement,
+    canMove,
+    draggingId,
     setElements,
     reset,
     saveSnapshot,
