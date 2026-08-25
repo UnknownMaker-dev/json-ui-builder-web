@@ -176,7 +176,8 @@ export const ELEMENT_DEFINITIONS: Record<UIElementType, ElementDefinition> = {
     label: "Image",
     icon: ImageIcon,
     jsonUiType: "image",
-    isContainer: false,
+    // O `image` do JSON UI aceita `controls`, então serve de container também.
+    isContainer: true,
     defaults: () => ({ width: 64, height: 64, texture: TEX("default"), nineslice: 4 }),
   },
   button: {
