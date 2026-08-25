@@ -71,6 +71,13 @@ export interface UIProperties {
    * continua sendo a ordem na pilha, que o Minecraft resolve sozinho.
    */
   stackAlign?: StackAlign;
+  /**
+   * Distribuição dos filhos no eixo DA pilha (só faz sentido no próprio
+   * stack_panel). O JSON UI não tem um "justify-content": o efeito é obtido
+   * encolhendo a pilha até o conteúdo (`100%c`) e ancorando ela dentro de um
+   * panel do tamanho desenhado — é o que o exporter monta.
+   */
+  stackJustify?: StackAlign;
 
   // Collection panel
   collectionName?: string;

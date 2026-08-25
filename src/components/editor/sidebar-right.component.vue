@@ -104,6 +104,35 @@ const setStackAlign = (value: string) => {
   save();
 };
 
+/**
+ * Distribuição do BLOCO de filhos no eixo da própria pilha — o que falta para
+ * conseguir deixar os filhos no meio do stack_panel, e não só centralizados no
+ * eixo transversal.
+ */
+const ownIsHorizontal = computed(
+  () => el.value?.properties.orientation === "horizontal",
+);
+
+const stackJustifyOptions = computed(() =>
+  ownIsHorizontal.value
+    ? [
+        { value: "start", label: "À esquerda", icon: AlignStartVertical },
+        { value: "center", label: "No meio", icon: AlignCenterVertical },
+        { value: "end", label: "À direita", icon: AlignEndVertical },
+      ]
+    : [
+        { value: "start", label: "No topo", icon: AlignStartHorizontal },
+        { value: "center", label: "No meio", icon: AlignCenterHorizontal },
+        { value: "end", label: "Na base", icon: AlignEndHorizontal },
+      ],
+);
+
+const setStackJustify = (value: string) => {
+  if (!el.value) return;
+  el.value.properties.stackJustify = value as StackAlign;
+  save();
+};
+
 const stateLabels: Record<string, string> = {
   defaultTexture: "Default",
   hoverTexture: "Hover",
@@ -167,13 +196,34 @@ const stateLabels: Record<string, string> = {
         </div>
       </template>
 
-      <div class="field" v-if="el.type === 'stackPanel'">
-        <label>Orientação</label>
-        <select v-model="el.properties.orientation" @change="save">
-          <option value="vertical">vertical</option>
-          <option value="horizontal">horizontal</option>
-        </select>
-      </div>
+      <template v-if="el.type === 'stackPanel'">
+        <div class="field">
+          <label>Orientação</label>
+          <select v-model="el.properties.orientation" @change="save">
+            <option value="vertical">vertical</option>
+            <option value="horizontal">horizontal</option>
+          </select>
+        </div>
+
+        <div class="align-row stack-align">
+          <span class="align-label">
+            Distribuir os filhos
+            <em>{{ ownIsHorizontal ? "ao longo da largura" : "ao longo da altura" }}</em>
+          </span>
+          <div class="align-btns">
+            <button
+              v-for="opt in stackJustifyOptions"
+              :key="opt.value"
+              class="align-btn"
+              :class="{ accent: (el.properties.stackJustify ?? 'start') === opt.value }"
+              :title="opt.label"
+              @click="setStackJustify(opt.value)"
+            >
+              <component :is="opt.icon" :size="16" />
+            </button>
+          </div>
+        </div>
+      </template>
 
       <div class="field" v-if="el.type === 'collectionPanel'">
         <label>Collection Name</label>
