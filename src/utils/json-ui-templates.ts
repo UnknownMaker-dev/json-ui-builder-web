@@ -14,137 +14,130 @@ export interface ScreenRoute {
   namespace: string;
 }
 
-/** Template do botão de formulário com hover text (referenciado pelos botões). */
-export function buttonWithHoverTextTemplate(namespace: string): any {
+/**
+ * Conteúdo desenhado DENTRO do botão: o ícone e o texto.
+ *
+ * Fica separado porque o `common_buttons.light_content_button` recebe o próprio
+ * conteúdo pela variável `$button_content` — um controle que herda dele não
+ * pode declarar `controls` sem destruir o botão do jogo. E o conteúdo precisa
+ * estar aqui dentro: é este botão que carrega o `collection_index`, então é
+ * dentro dele que `#form_button_text` resolve para o item certo da coleção.
+ */
+export function buttonFaceTemplate(): any {
   return {
-    "$default_button_background_texture|default": "textures/ui/glass_pane",
-    "$hover_button_background_texture|default": "textures/ui/glass_pane_hover",
-    "$pressed_button_background_texture|default": "textures/ui/button_black_hover",
-
-    "$button_size|default": [64, 64],
-    "$button_offset|default": [0, 0],
-
-    "$icon_size|default": [45, 45],
-    "$icon_offset|default": [0, -5],
-
-    "$text_offset|default": [0, -8],
-    "$font_size|default": 1,
-    "$font_type|default": "MinecraftRegular",
-    "$shadow|default": false,
-    "$text_alignment|default": "left",
-
-    "$show_hover_text|default": false,
-
-    // collection_panel, e não panel: o `collection_index` que cada botão
-    // recebe só é aceito num controle que entende coleção. Num panel comum o
-    // jogo recusa tanto `collection_index` quanto `collection_name`
-    // ("Unknown property"), e o botão para de responder ao formulário.
-    type: "collection_panel",
-    collection_name: "form_buttons",
-    size: "$button_size",
-    anchor_from: "top_left",
-    anchor_to: "top_left",
+    type: "panel",
+    size: ["100%", "100%"],
     controls: [
       {
-        panel_name: {
-          type: "panel",
-          size: "$button_size",
-          offset: "$button_offset",
+        icone: {
+          type: "image",
           anchor_from: "top_left",
           anchor_to: "top_left",
-          // Acima do botão do jogo. Sem isto o `form_button` abaixo, por vir
-          // depois na lista, desenhava o próprio fundo POR CIMA do ícone e do
-          // texto — os botões apareciam vazios no jogo.
-          layer: 10,
-          controls: [
+          layer: 2,
+          size: "$icon_size",
+          offset: "$icon_offset",
+          bindings: [
             {
-              image: {
-                anchor_from: "top_left",
-                anchor_to: "top_left",
-                type: "image",
-                layer: 200,
-                size: "$icon_size",
-                offset: "$icon_offset",
-                bindings: [
-                  {
-                    binding_name: "#form_button_texture",
-                    binding_name_override: "#texture",
-                    binding_type: "collection",
-                    binding_collection_name: "form_buttons",
-                  },
-                  {
-                    binding_name: "#form_button_texture_file_system",
-                    binding_name_override: "#texture_file_system",
-                    binding_type: "collection",
-                    binding_collection_name: "form_buttons",
-                  },
-                  {
-                    binding_type: "view",
-                    source_property_name:
-                      "(not ((#texture = '') or (#texture = 'loading')))",
-                    target_property_name: "#visible",
-                  },
-                ],
-              },
+              binding_name: "#form_button_texture",
+              binding_name_override: "#texture",
+              binding_type: "collection",
+              binding_collection_name: "form_buttons",
             },
             {
-              text: {
-                anchor_from: "top_left",
-                anchor_to: "top_left",
-                type: "label",
-                text: "#form_button_text",
-                font_type: "$font_type",
-                font_scale_factor: "$font_size",
-                layer: 5,
-                size: ["100%", "default"],
-                text_alignment: "$text_alignment",
-                shadow: "$shadow",
-                offset: "$text_offset",
-                bindings: [
-                  {
-                    binding_name: "#form_button_text",
-                    binding_type: "collection",
-                    binding_collection_name: "form_buttons",
-                  },
-                ],
-              },
+              binding_name: "#form_button_texture_file_system",
+              binding_name_override: "#texture_file_system",
+              binding_type: "collection",
+              binding_collection_name: "form_buttons",
+            },
+            {
+              binding_type: "view",
+              source_property_name:
+                "(not ((#texture = '') or (#texture = 'loading')))",
+              target_property_name: "#visible",
             },
           ],
         },
       },
       {
-        "form_button@common_buttons.light_content_button": {
-          $default_button_texture: "$default_button_background_texture",
-          $hover_button_texture: "$hover_button_background_texture",
-          $pressed_button_texture: "$pressed_button_background_texture",
-          $default_state_border_visible: false,
-          $hover_state_border_visible: false,
-          $pressed_state_border_visible: false,
-          $pressed_button_name: "button.form_button_click",
-          offset: "$button_offset",
-          anchor_from: "top_left",
-          anchor_to: "top_left",
-          size: "$button_size",
-          $button_text: "#null",
-          $button_text_binding_type: "collection",
-          $button_text_grid_collection_name: "form_buttons",
-          $button_text_max_size: ["100%", 20],
-          variables: [
-            {
-              requires: "($show_hover_text)",
-              $button_content: `${namespace}.hover_text_panel`,
-            },
-          ],
+        rotulo: {
+          type: "label",
+          // Centralizado na caixa do botão; o alinhamento horizontal do texto
+          // continua vindo da propriedade escolhida no editor.
+          anchor_from: "center",
+          anchor_to: "center",
+          layer: 3,
+          size: ["100%", "default"],
+          text: "#form_button_text",
+          font_type: "$font_type",
+          font_scale_factor: "$font_size",
+          text_alignment: "$text_alignment",
+          shadow: "$shadow",
+          offset: "$text_offset",
           bindings: [
             {
-              binding_type: "collection_details",
+              binding_name: "#form_button_text",
+              binding_type: "collection",
               binding_collection_name: "form_buttons",
             },
           ],
         },
       },
     ],
+  };
+}
+
+/**
+ * O botão de formulário.
+ *
+ * Herda direto de `common_buttons.light_content_button` porque `button` é o
+ * único tipo que aceita `collection_index` — o teste no jogo mostrou o jogo
+ * recusando a propriedade tanto em `panel` quanto em `collection_panel`. Sem o
+ * índice, `#form_button_text` não resolve, o binding de visibilidade entende
+ * como texto vazio e o botão inteiro some da tela.
+ */
+export function buttonWithHoverTextTemplate(namespace: string): any {
+  return {
+    "$default_button_background_texture|default": "textures/ui/glass_pane",
+    "$hover_button_background_texture|default": "textures/ui/glass_pane_hover",
+    "$pressed_button_background_texture|default": "textures/ui/button_black_hover",
+
+    "$button_size|default": ["100%", "100%"],
+    "$button_offset|default": [0, 0],
+
+    "$icon_size|default": ["100%", "100%"],
+    "$icon_offset|default": [0, 0],
+
+    "$text_offset|default": [0, 0],
+    "$font_size|default": 1,
+    "$font_type|default": "default",
+    "$shadow|default": false,
+    "$text_alignment|default": "center",
+
+    $default_button_texture: "$default_button_background_texture",
+    $hover_button_texture: "$hover_button_background_texture",
+    $pressed_button_texture: "$pressed_button_background_texture",
+    $default_state_border_visible: false,
+    $hover_state_border_visible: false,
+    $pressed_state_border_visible: false,
+    $pressed_button_name: "button.form_button_click",
+
+    // O texto do jogo fica desligado: quem desenha é o `button_face`, com a
+    // fonte e o alinhamento escolhidos no editor.
+    $button_text: "#null",
+    $button_text_binding_type: "collection",
+    $button_text_grid_collection_name: "form_buttons",
+    $button_content: `${namespace}.button_face`,
+
+    size: "$button_size",
+    offset: "$button_offset",
+    anchor_from: "top_left",
+    anchor_to: "top_left",
+
     bindings: [
+      {
+        binding_type: "collection_details",
+        binding_collection_name: "form_buttons",
+      },
       {
         binding_name: "#form_button_text",
         binding_type: "collection",
@@ -280,32 +273,20 @@ export function serverFormTemplate(routes: ScreenRoute[]): string {
     namespace: "server_form",
 
     // Botão de reserva: o mesmo mecanismo de coleção, com visual padrão.
-    fallback_button: {
-      // Mesmo motivo do custom_button: quem recebe collection_index precisa
-      // ser um collection_panel.
-      type: "collection_panel",
-      collection_name: "form_buttons",
+    // Mesmo motivo do custom_button: só um `button` aceita collection_index.
+    "fallback_button@common_buttons.light_content_button": {
       size: ["100%", 20],
       anchor_from: "top_left",
       anchor_to: "top_left",
-      controls: [
-        {
-          "btn@common_buttons.light_content_button": {
-            size: ["100%", 20],
-            $pressed_button_name: "button.form_button_click",
-            $button_text: "#form_button_text",
-            $button_text_binding_type: "collection",
-            $button_text_grid_collection_name: "form_buttons",
-            bindings: [
-              {
-                binding_type: "collection_details",
-                binding_collection_name: "form_buttons",
-              },
-            ],
-          },
-        },
-      ],
+      $pressed_button_name: "button.form_button_click",
+      $button_text: "#form_button_text",
+      $button_text_binding_type: "collection",
+      $button_text_grid_collection_name: "form_buttons",
       bindings: [
+        {
+          binding_type: "collection_details",
+          binding_collection_name: "form_buttons",
+        },
         {
           binding_name: "#form_button_text",
           binding_type: "collection",
@@ -343,7 +324,10 @@ export function serverFormTemplate(routes: ScreenRoute[]): string {
         },
         {
           buttons_area: {
-            type: "panel",
+            // collection_panel: é quem pode declarar collection_name e abrir o
+            // escopo da coleção para as fatias.
+            type: "collection_panel",
+            collection_name: "form_buttons",
             anchor_from: "top_left",
             anchor_to: "top_left",
             offset: [4, 26],

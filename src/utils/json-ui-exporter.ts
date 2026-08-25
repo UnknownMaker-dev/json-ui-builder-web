@@ -19,6 +19,7 @@ import { ELEMENT_DEFINITIONS } from "../types/element.types";
 import { buildButtonIndexMap } from "./form-buttons";
 import {
   buttonWithHoverTextTemplate,
+  buttonFaceTemplate,
   hoverTextPanelTemplate,
   basicPanelScrollingContent,
 } from "./json-ui-templates";
@@ -207,8 +208,9 @@ function elementToJsonUi(
           p.pressedTexture ?? p.defaultTexture ?? "",
         ),
 
-        $button_offset: offsetOf(p),
-        $button_size: sizeOf(p),
+        // Dentro do embrulho o botão ocupa tudo; posição é do embrulho.
+        $button_offset: [0, 0],
+        $button_size: ["100%", "100%"],
 
         layer: 0,
         anchor_from: "top_left",
@@ -218,15 +220,13 @@ function elementToJsonUi(
         collection_index: ctx.buttonIndex.get(el.id) ?? 0,
 
         $icon_offset: [CFG.buttonImageOffsetX, CFG.buttonImageOffsetY],
-        $icon_size: sizeOf(p),
+        $icon_size: ["100%", "100%"],
 
         $font_size: p.fontSize ?? 1,
         $text_offset: [0, 0],
         $font_type: fontType,
         $shadow: p.shadow ?? false,
         $text_alignment: p.textAlignment ?? "center",
-
-        $show_hover_text: false,
       };
       if (bindings) json.bindings = bindings;
       return {
@@ -373,6 +373,24 @@ function buildTree(
     const { json, link, continuePath } = elementToJsonUi(el, ctx);
     const def = ELEMENT_DEFINITIONS[el.type];
 
+    // O botão vai dentro de um collection_panel: é o tipo que pode declarar
+    // `collection_name`, e é ele que abre o escopo da coleção do formulário.
+    if (el.type === "button") {
+      const anchor = parentIsStack
+        ? stackAnchor(el.properties.stackAlign, stackIsHorizontal)
+        : "top_left";
+      out[`${shortId()}-btn`] = {
+        type: "collection_panel",
+        collection_name: CFG.defaultCollectionName,
+        size: sizeOf(el.properties),
+        offset: parentIsStack ? [0, 0] : offsetOf(el.properties),
+        anchor_from: anchor,
+        anchor_to: anchor,
+        controls: [{ [`${shortId()}-button${link}`]: json }],
+      };
+      continue;
+    }
+
     // Filho de stack_panel: o Minecraft posiciona sozinho no eixo da pilha —
     // zera o offset e deixa a ÂNCORA cuidar do eixo transversal.
     if (parentIsStack) {
@@ -468,7 +486,11 @@ export function exportToJsonUiObject(
 
   const tree: Record<string, any> = {
     namespace,
-    custom_button: buttonWithHoverTextTemplate(namespace),
+    // O template herda do botão do jogo — é o que torna `collection_index`
+    // válido nos nós que apontam para ele.
+    "custom_button@common_buttons.light_content_button":
+      buttonWithHoverTextTemplate(namespace),
+    button_face: buttonFaceTemplate(),
     hover_text_panel: hoverTextPanelTemplate(),
   };
 
