@@ -198,95 +198,34 @@ export function basicPanelScrollingContent(): any {
  * Gera o `ui/server_form.json`.
  *
  * Este arquivo tem o nome de uma tela do jogo, então SUBSTITUI a original por
- * completo (JSON-UI.md, seção 2). Ele faz duas coisas:
- *
- * 1. Roteia: para cada tela criada no editor, mostra o painel dela quando o
- *    título do formulário contém o nome daquela tela. O teste de "contém" é a
- *    subtração de string da seção 9 do JSON-UI.md.
- * 2. Mantém o diálogo padrão do jogo para quando o título não casa com tela
- *    nenhuma, mostrando o texto do formulário.
- *
- * O corpo de reserva NÃO desenha os botões. A única forma de posicioná-los à
- * mão seria dar `collection_index` a cada fatia, e isso só vale num controle
- * que herda o botão do jogo — desenhar uma fileira de botões genéricos aqui
- * enchia o log de erro em todo formulário aberto, para reconstruir algo que o
- * jogo já fazia melhor sozinho. Enquanto o pack estiver ativo, formulários que
- * não são seus mostram só o título e o texto.
+ * completo (JSON-UI.md, seção 2). Ele faz uma coisa só: rotear. Para cada tela
+ * criada no editor, mostra o painel dela quando o título do formulário contém
+ * o nome daquela tela — o teste de "contém" é a subtração de string da seção 9
+ * do JSON-UI.md.
+ * Só isso. Não há corpo de reserva: um formulário cujo título não casa com
+ * nenhuma tela daqui abre vazio enquanto o pack estiver ativo. Reconstruir o
+ * diálogo padrão à mão custava um erro no log a cada formulário aberto para
+ * refazer pior o que o jogo já faz sozinho.
  */
 export function serverFormTemplate(routes: ScreenRoute[]): string {
-  // "Não bateu com nenhuma tela": tirar todas as chaves não mudou o título.
-  const noneMatch = `((#title_text${routes
-    .map((r) => ` - '${r.flag}'`)
-    .join("")}) = #title_text)`;
-
-  const controls: any[] = [
-    {
-      "standard_form@common_dialogs.main_panel_no_buttons": {
-        $title_panel: "common_dialogs.standard_title_label",
-        $title_size: ["100% - 15px", 10],
-        $title_max_size: ["100% - 15px", 10],
-        size: [225, 200],
-        $text_name: "#title_text",
-        $title_text_binding_type: "none",
-        $child_control: "server_form.long_form_panel",
-        layer: 2,
-        bindings: [
-          { binding_name: "#title_text" },
-          {
-            binding_type: "view",
-            source_property_name: noneMatch,
-            target_property_name: "#visible",
-          },
-        ],
-      },
-    },
-  ];
-
-  // Uma entrada por tela do editor.
-  for (const route of routes) {
-    controls.push({
-      [`${route.namespace}@${route.namespace}.${route.namespace}`]: {
-        layer: 10,
-        bindings: [
-          { binding_name: "#title_text" },
-          {
-            binding_type: "view",
-            source_property_name: `(not ((#title_text - '${route.flag}') = #title_text))`,
-            target_property_name: "#visible",
-          },
-        ],
-      },
-    });
-  }
-
-  const doc = {
-    namespace: "server_form",
-
-    // Corpo do formulário padrão: só o texto.
-    //
-    // stack_panel, e não panel: este controle é injetado no `inside_header_panel`
-    // do diálogo padrão, que já traz `orientation` da definição do jogo. Como
-    // panel, o jogo reclamava "Unknown property [orientation]".
-    long_form_panel: {
-      type: "stack_panel",
-      orientation: "vertical",
-      size: ["100%", "100%"],
-      controls: [
+  // Uma entrada por tela do editor: visível quando o título do formulário
+  // contém o nome dela.
+  const controls = routes.map((route) => ({
+    [`${route.namespace}@${route.namespace}.${route.namespace}`]: {
+      layer: 10,
+      bindings: [
+        { binding_name: "#title_text" },
         {
-          form_text: {
-            type: "label",
-            anchor_from: "top_left",
-            anchor_to: "top_left",
-            offset: [4, 2],
-            size: ["100% - 8px", "default"],
-            text: "#form_text",
-            color: [0.85, 0.85, 0.85],
-            bindings: [{ binding_name: "#form_text" }],
-          },
+          binding_type: "view",
+          source_property_name: `(not ((#title_text - '${route.flag}') = #title_text))`,
+          target_property_name: "#visible",
         },
       ],
     },
+  }));
 
+  const doc = {
+    namespace: "server_form",
     long_form: {
       type: "panel",
       size: ["100%", "100%"],
