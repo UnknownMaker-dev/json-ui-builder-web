@@ -257,26 +257,78 @@ function justifyAnchor(align: StackAlign, horizontal: boolean): string {
 }
 
 /**
- * Aplica a distribuição no eixo da pilha.
+ * Painel vazio usado como espaço entre itens da pilha.
  *
- * JSON UI não tem "justify-content". O jeito que funciona é encolher o
- * stack_panel até o conteúdo (`100%c` no eixo da pilha, seção 6 do JSON-UI.md)
- * e ancorá-lo dentro de um panel do tamanho que foi desenhado — num panel a
- * âncora vale nos dois eixos, num stack_panel não.
+ * JSON UI não tem `margin` nem `gap` — o stack_panel encosta um filho no outro.
+ * Um panel sem textura é invisível e só ocupa o lugar que a gente pedir. A
+ * medida transversal fica em 1px em vez de 0 para o controle nunca ter área
+ * nula.
  */
-function applyJustify(json: any, el: UIElement): void {
+function spacer(px: number, horizontal: boolean): any {
+  return {
+    type: "panel",
+    size: horizontal ? [r3(px * S), 1] : [1, r3(px * S)],
+  };
+}
+
+/**
+ * Intercala os espaçadores entre os filhos da pilha.
+ *
+ * Antes de cada filho entra um vão de `stackGap` (menos no primeiro) somado à
+ * `stackMargin` daquele filho.
+ */
+function withSpacing(
+  controls: any[],
+  el: UIElement,
+  horizontal: boolean,
+): any[] {
+  const gap = el.properties.stackGap ?? 0;
+  const out: any[] = [];
+
+  el.children.forEach((child, i) => {
+    const control = controls[i];
+    if (!control) return;
+    const space = (i > 0 ? gap : 0) + (child.properties.stackMargin ?? 0);
+    if (space > 0) {
+      out.push({ [`${shortId()}-gap`]: spacer(space, horizontal) });
+    }
+    out.push(control);
+  });
+
+  return out;
+}
+
+/**
+ * Aplica recuo interno e distribuição no eixo da pilha.
+ *
+ * JSON UI não tem "justify-content" nem "padding". O jeito que funciona é
+ * encolher o stack_panel até o conteúdo (`100%c` no eixo da pilha, seção 6 do
+ * JSON-UI.md), estreitá-lo no eixo transversal e ancorá-lo dentro de um panel
+ * do tamanho que foi desenhado — num panel a âncora vale nos dois eixos, num
+ * stack_panel não.
+ */
+function applyStackBox(json: any, el: UIElement): void {
   const justify = el.properties.stackJustify ?? "start";
-  if (justify === "start") return;
+  const pad = el.properties.stackPadding ?? 0;
+  if (justify === "start" && pad <= 0) return;
 
   const horizontal = el.properties.orientation === "horizontal";
   const anchor = justifyAnchor(justify, horizontal);
+  const p = r3(pad * S);
+  const inset = p > 0 ? `100% - ${r3(p * 2)}px` : "100%";
+
+  // No eixo da pilha o recuo entra pelo offset; no transversal, encolhendo.
+  const offset: [number, number] = horizontal
+    ? [justify === "end" ? -p : p, p]
+    : [p, justify === "end" ? -p : p];
 
   const inner = {
     type: "stack_panel",
     orientation: json.orientation,
-    size: horizontal ? ["100%c", "100%"] : ["100%", "100%c"],
+    size: horizontal ? ["100%c", inset] : [inset, "100%c"],
     anchor_from: anchor,
     anchor_to: anchor,
+    offset: justify === "center" ? [0, 0] : offset,
     controls: json.controls ?? [],
   };
 
@@ -325,7 +377,11 @@ function buildTree(
       ).map(([k, v]) => ({ [k]: v }));
     }
 
-    if (el.type === "stackPanel") applyJustify(json, el);
+    if (el.type === "stackPanel") {
+      const horizontal = el.properties.orientation === "horizontal";
+      if (json.controls) json.controls = withSpacing(json.controls, el, horizontal);
+      applyStackBox(json, el);
+    }
 
     out[`${shortId()}-${el.type}${link}`] = json;
   }

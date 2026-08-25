@@ -223,6 +223,30 @@ const stateLabels: Record<string, string> = {
             </button>
           </div>
         </div>
+
+        <PropSlider
+          label="Espaçamento"
+          unit="px"
+          :min="0"
+          :max="80"
+          :step="1"
+          :model-value="el.properties.stackGap ?? 0"
+          @update:model-value="(v: number) => (el!.properties.stackGap = v)"
+          @change="save"
+        />
+        <PropSlider
+          label="Recuo interno"
+          unit="px"
+          :min="0"
+          :max="80"
+          :step="1"
+          :model-value="el.properties.stackPadding ?? 0"
+          @update:model-value="(v: number) => (el!.properties.stackPadding = v)"
+          @change="save"
+        />
+        <p class="stack-note">
+          JSON UI não tem margin: o espaço vira painel vazio entre os itens.
+        </p>
       </template>
 
       <div class="field" v-if="el.type === 'collectionPanel'">
@@ -348,9 +372,22 @@ const stateLabels: Record<string, string> = {
           </div>
         </div>
 
+        <PropSlider
+          v-if="inStack"
+          label="Margem antes"
+          unit="px"
+          :min="0"
+          :max="120"
+          :step="1"
+          :model-value="el.properties.stackMargin ?? 0"
+          @update:model-value="(v: number) => (el!.properties.stackMargin = v)"
+          @change="save"
+        />
+
         <p class="stack-note" v-if="inStack">
           O {{ stackIsHorizontal ? "X" : "Y" }} é decidido pela ordem na pilha —
-          use as setas para reordenar.
+          use as setas para reordenar. Espaçamento entre todos os itens fica no
+          próprio stack panel.
         </p>
 
         <PropSlider label="X" unit="px" :min="0" :max="800" v-model="el.properties.x" @change="save" :disabled="inStack" />
