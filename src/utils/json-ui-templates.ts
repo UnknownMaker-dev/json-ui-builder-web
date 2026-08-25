@@ -52,6 +52,10 @@ export function buttonWithHoverTextTemplate(namespace: string): any {
           offset: "$button_offset",
           anchor_from: "top_left",
           anchor_to: "top_left",
+          // Acima do botão do jogo. Sem isto o `form_button` abaixo, por vir
+          // depois na lista, desenhava o próprio fundo POR CIMA do ícone e do
+          // texto — os botões apareciam vazios no jogo.
+          layer: 10,
           controls: [
             {
               image: {
