@@ -308,8 +308,13 @@ export function serverFormTemplate(routes: ScreenRoute[]): string {
     },
 
     // Corpo do formulário padrão: o texto e as fatias de botão.
+    //
+    // stack_panel, e não panel: este controle é injetado no `inside_header_panel`
+    // do diálogo padrão, que já traz `orientation` da definição do jogo. Como
+    // panel, o jogo reclamava "Unknown property [orientation]".
     long_form_panel: {
-      type: "panel",
+      type: "stack_panel",
+      orientation: "vertical",
       size: ["100%", "100%"],
       controls: [
         {
@@ -327,6 +332,8 @@ export function serverFormTemplate(routes: ScreenRoute[]): string {
         {
           buttons_area: {
             type: "panel",
+            // Abre o escopo da coleção para o `collection_index` das fatias.
+            collection_name: "form_buttons",
             anchor_from: "top_left",
             anchor_to: "top_left",
             offset: [4, 26],
