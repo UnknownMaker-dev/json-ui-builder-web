@@ -15,6 +15,7 @@ import {
   Lock,
   Unlock,
   Package,
+  Save,
 } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
 import { exportToJsonUiString } from "../../utils/json-ui-exporter";
@@ -22,6 +23,7 @@ import { importFromJsonUi } from "../../utils/json-ui-importer";
 import { serverFormTemplate } from "../../utils/json-ui-templates";
 import { generateScript } from "../../utils/scripter";
 import { sanitizeFlag } from "../../types/screen.types";
+import { serializeProject, parseProject } from "../../utils/project-file";
 import OutputModal from "./output-modal.component.vue";
 import PackModal from "./pack-modal.component.vue";
 import Wiki from "./wiki.component.vue";
@@ -66,6 +68,37 @@ const exportServerForm = () => {
     content: serverFormTemplate(routes),
     filename: "server_form.json",
   };
+};
+
+// --- PROJETO (.json com todas as telas) ---
+const projectInput = ref<HTMLInputElement | null>(null);
+
+const saveProject = () => {
+  const blob = new Blob([serializeProject(editorStore.snapshotProject())], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${editorStore.packName.replace(/\s+/g, "-").toLowerCase()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const openProject = () => projectInput.value?.click();
+
+const onProjectFile = async (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+
+  const result = parseProject(await file.text());
+  if (!result.ok || !result.project) {
+    alert("Não consegui abrir o projeto: " + (result.error ?? "desconhecido"));
+    return;
+  }
+  editorStore.loadProject(result.project);
 };
 
 const triggerImport = () => fileInput.value?.click();
@@ -139,12 +172,23 @@ const onImportFile = async (e: Event) => {
       <button class="btn btn-ghost" @click="exportServerForm">
         <FileCode2 :size="16" /> server_form
       </button>
-      <button class="btn btn-ghost" @click="triggerImport">
-        <FolderOpen :size="16" /> Importar
+      <button class="btn btn-ghost" @click="openProject">
+        <FolderOpen :size="16" /> Abrir projeto
+      </button>
+      <button class="btn btn-ghost" @click="saveProject">
+        <Save :size="16" /> Salvar
+      </button>
+      <button
+        class="btn btn-ghost"
+        @click="triggerImport"
+        title="Importar um arquivo JSON UI do Minecraft para a tela ativa"
+      >
+        <FileCode2 :size="16" /> Importar JSON UI
       </button>
     </div>
 
     <input ref="fileInput" type="file" accept=".json" hidden @change="onImportFile" />
+    <input ref="projectInput" type="file" accept=".json" hidden @change="onProjectFile" />
 
     <OutputModal
       v-if="output"

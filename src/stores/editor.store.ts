@@ -128,6 +128,32 @@ export const useEditorStore = defineStore("editor", () => {
     ensureHistory(copy.id);
   }
 
+  /** Estado inteiro do projeto, para salvar em arquivo. */
+  function snapshotProject() {
+    return {
+      packName: packName.value,
+      triggerItem: triggerItem.value,
+      scriptApi: scriptApi.value,
+      screens: JSON.parse(JSON.stringify(screens.value)) as UIScreen[],
+    };
+  }
+
+  /** Substitui o projeto inteiro pelo conteúdo de um arquivo salvo. */
+  function loadProject(project: {
+    packName: string;
+    triggerItem: string;
+    scriptApi: string;
+    screens: UIScreen[];
+  }) {
+    packName.value = project.packName;
+    triggerItem.value = project.triggerItem;
+    scriptApi.value = project.scriptApi === "1.x" ? "1.x" : "2.x";
+    screens.value = project.screens;
+    activeScreenId.value = project.screens[0].id;
+    for (const key of Object.keys(histories)) delete histories[key];
+    for (const screen of project.screens) ensureHistory(screen.id);
+  }
+
   function selectScreen(id: string) {
     if (screens.value.some((s) => s.id === id)) activeScreenId.value = id;
   }
@@ -440,6 +466,8 @@ export const useEditorStore = defineStore("editor", () => {
     duplicateScreen,
     selectScreen,
     screenNameConflicts,
+    snapshotProject,
+    loadProject,
     // pacote
     packName,
     triggerItem,

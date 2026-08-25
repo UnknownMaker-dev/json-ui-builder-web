@@ -35,7 +35,12 @@ export function buttonWithHoverTextTemplate(namespace: string): any {
 
     "$show_hover_text|default": false,
 
-    type: "panel",
+    // collection_panel, e não panel: o `collection_index` que cada botão
+    // recebe só é aceito num controle que entende coleção. Num panel comum o
+    // jogo recusa tanto `collection_index` quanto `collection_name`
+    // ("Unknown property"), e o botão para de responder ao formulário.
+    type: "collection_panel",
+    collection_name: "form_buttons",
     size: "$button_size",
     anchor_from: "top_left",
     anchor_to: "top_left",
@@ -272,7 +277,10 @@ export function serverFormTemplate(routes: ScreenRoute[]): string {
 
     // Botão de reserva: o mesmo mecanismo de coleção, com visual padrão.
     fallback_button: {
-      type: "panel",
+      // Mesmo motivo do custom_button: quem recebe collection_index precisa
+      // ser um collection_panel.
+      type: "collection_panel",
+      collection_name: "form_buttons",
       size: ["100%", 20],
       anchor_from: "top_left",
       anchor_to: "top_left",
@@ -332,8 +340,6 @@ export function serverFormTemplate(routes: ScreenRoute[]): string {
         {
           buttons_area: {
             type: "panel",
-            // Abre o escopo da coleção para o `collection_index` das fatias.
-            collection_name: "form_buttons",
             anchor_from: "top_left",
             anchor_to: "top_left",
             offset: [4, 26],
