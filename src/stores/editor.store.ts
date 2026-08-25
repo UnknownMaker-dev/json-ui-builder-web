@@ -255,6 +255,45 @@ export const useEditorStore = defineStore("editor", () => {
     }
   }
 
+  // Dimensões do canvas raiz (devem casar com .canvas-container / canvas-node).
+  const CANVAS_W = 800;
+  const CANVAS_H = 600;
+
+  // --- ZOOM DO CANVAS ---
+  /**
+   * O canvas tem 800x600 fixos, que não cabem numa tela de 1366x768 junto das
+   * duas barras laterais. O zoom encolhe a visualização sem mexer nas
+   * coordenadas: os elementos continuam guardados em px do editor.
+   */
+  const zoom = ref(1);
+  /** Enquanto "fit", o zoom se recalcula sozinho quando a janela muda. */
+  const zoomMode = ref<"fit" | "manual">("fit");
+
+  const ZOOM_MIN = 0.25;
+  const ZOOM_MAX = 2;
+  const clampZoom = (z: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+
+  /** Ajusta o zoom ao espaço disponível (chamado pelo canvas ao redimensionar). */
+  function fitToViewport(availableWidth: number, availableHeight: number) {
+    if (zoomMode.value !== "fit") return;
+    if (availableWidth <= 0 || availableHeight <= 0) return;
+    // Nunca passa de 1: ampliar sozinho só deixaria tudo borrado.
+    zoom.value = clampZoom(
+      Math.min(availableWidth / CANVAS_W, availableHeight / CANVAS_H, 1),
+    );
+  }
+
+  function setZoom(z: number) {
+    zoomMode.value = "manual";
+    zoom.value = clampZoom(z);
+  }
+  const zoomIn = () => setZoom(zoom.value + 0.1);
+  const zoomOut = () => setZoom(zoom.value - 0.1);
+  /** Volta a acompanhar o tamanho da janela. */
+  const zoomToFit = () => {
+    zoomMode.value = "fit";
+  };
+
   /**
    * Trava de proporção: quando ativa, o resize mantém a razão largura/altura
    * (equivalente a segurar SHIFT). Existe para mobile, que não tem SHIFT.
@@ -356,9 +395,6 @@ export const useEditorStore = defineStore("editor", () => {
     selectedElementId.value = id;
   }
 
-  // Dimensões do canvas raiz (devem casar com .canvas-container / canvas-node).
-  const CANVAS_W = 800;
-  const CANVAS_H = 600;
   const clampVal = (v: number, min: number, max: number) =>
     Math.min(Math.max(v, min), Math.max(min, max));
 
@@ -535,6 +571,13 @@ export const useEditorStore = defineStore("editor", () => {
     projectNamespace,
     aspectLocked,
     toggleAspectLock,
+    zoom,
+    zoomMode,
+    fitToViewport,
+    setZoom,
+    zoomIn,
+    zoomOut,
+    zoomToFit,
     addElement,
     addRootElement,
     deleteElement,
