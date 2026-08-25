@@ -2,25 +2,45 @@
  * Exporter: converte a árvore de UIElement (fonte de verdade da store) no
  * formato JSON UI do Minecraft Bedrock.
  *
- * Estratégia de coordenadas (portada do original): todo elemento é ancorado em
+ * Estratégia de coordenadas: cada tela vira UM panel do tamanho do canvas,
+ * ancorado no centro da tela do jogo. Dentro dele, todo elemento é ancorado em
  * `top_left` e recebe `offset`/`size` em px do editor multiplicados por
- * UI_SCALAR. Assim a posição absoluta do canvas vira coordenada do Minecraft
- * sem matemática de âncora.
+ * UI_SCALAR — a posição absoluta do canvas vira coordenada do Minecraft sem
+ * matemática de âncora.
+ *
+ * Envolver tudo num único panel raiz resolve dois problemas: o desenho fica
+ * centralizado em qualquer resolução, e vários elementos na raiz deixam de
+ * colidir (antes todos recebiam a mesma chave e só o último sobrevivia — a
+ * armadilha "item duplicado" do JSON-UI.md, seção 3).
  */
 import { exportConfig as CFG } from "../config/export.config";
 import type { UIElement, UIProperties } from "../types/element.types";
 import { ELEMENT_DEFINITIONS } from "../types/element.types";
+import { buildButtonIndexMap } from "./form-buttons";
 import {
   buttonWithHoverTextTemplate,
+  hoverTextPanelTemplate,
   basicPanelScrollingContent,
 } from "./json-ui-templates";
 
+/** Converte a URL de textura do editor no caminho dentro do resource pack. */
+export type TextureResolver = (editorUrl: string) => string;
+
 export interface ExportOptions {
   namespace: string;
+  /** Mapeia texturas do editor para caminhos do pack. */
+  resolveTexture?: TextureResolver;
   /** Inclui o bloco config.magicNumbers (necessário para reimportar). */
   includeConfig?: boolean;
   /** Inclui o comentário de crédito no final. */
   includeComment?: boolean;
+  /**
+   * Omite `nineslice_size` nos controles. O pack builder liga isto porque
+   * escreve o .json ao lado da textura com o dado original da arte — e o valor
+   * do controle teria prioridade sobre esse .json, sobrescrevendo o certo pelo
+   * aproximado que o editor guarda.
+   */
+  omitControlNineslice?: boolean;
 }
 
 let idCounter = 0;
@@ -32,24 +52,48 @@ function shortId(): string {
 
 const S = CFG.UI_SCALAR;
 
+/** Arredonda para 3 casas: evita `7.199999999999999` no arquivo final. */
+const r3 = (n: number) => Math.round(n * 1000) / 1000;
+
 function offsetOf(p: UIProperties): [number, number] {
-  return [p.x * S, p.y * S];
+  return [r3(p.x * S), r3(p.y * S)];
 }
 function sizeOf(p: UIProperties): [number, number] {
-  return [p.width * S, p.height * S];
+  return [r3(p.width * S), r3(p.height * S)];
 }
 
 const cleanBindings = (p: UIProperties) =>
   Array.isArray(p.bindings) && p.bindings.length ? p.bindings : undefined;
 
+/**
+ * Caminho de textura padrão quando não há resolver do pack: usa só o nome do
+ * arquivo sob `textures/ui/<namespace>/`. Antes o caminho de preview do editor
+ * vazava inteiro e o prefixo `textures/` acabava duplicado.
+ */
+function defaultResolver(namespace: string): TextureResolver {
+  return (url: string) => {
+    if (!url) return "textures/ui/White";
+    if (url.startsWith("data:")) return `textures/ui/${namespace}/imagem`;
+    const clean = url.split("?")[0].replace(/\.png$/i, "");
+    const base = clean.substring(clean.lastIndexOf("/") + 1);
+    return `textures/ui/${namespace}/${base}`;
+  };
+}
+
+interface BuildCtx {
+  namespace: string;
+  tex: TextureResolver;
+  omitNineslice: boolean;
+  buttonIndex: Map<string, number>;
+  /** Sub-árvores de scrolling panel que precisam subir para a raiz do arquivo. */
+  hoisted: Record<string, any>;
+}
+
 /** Converte um único elemento (sem filhos) no objeto JSON UI base. */
-function elementToJsonUi(el: UIElement, namespace: string): {
-  json: any;
-  /** Sufixo de link (@namespace.custom_button) ou "" para nós comuns. */
-  link: string;
-  /** Se false, os filhos NÃO devem ser descidos como controls diretos. */
-  continuePath: boolean;
-} {
+function elementToJsonUi(
+  el: UIElement,
+  ctx: BuildCtx,
+): { json: any; link: string; continuePath: boolean } {
   const p = el.properties;
   const base: any = {
     layer: 0,
@@ -98,10 +142,12 @@ function elementToJsonUi(el: UIElement, namespace: string): {
         json: {
           ...base,
           type: "image",
-          texture: p.texture ? toMcTexture(p.texture) : "textures/ui/White",
+          texture: ctx.tex(p.texture ?? ""),
           offset: offsetOf(p),
           size: sizeOf(p),
-          ...(p.nineslice != null ? { nineslice_size: p.nineslice } : {}),
+          ...(p.nineslice != null && !ctx.omitNineslice
+            ? { nineslice_size: p.nineslice }
+            : {}),
         },
         link: "",
         continuePath: true,
@@ -116,12 +162,14 @@ function elementToJsonUi(el: UIElement, namespace: string): {
           type: "label",
           text: p.text ?? "",
           offset: [
-            (p.x + CFG.fontOffsetX) * S,
-            (p.y + CFG.fontOffsetY) * S +
-              CFG.getFontScaledOffsetY(fontSize, fontType),
+            r3((p.x + CFG.fontOffsetX) * S),
+            r3(
+              (p.y + CFG.fontOffsetY) * S +
+                CFG.getFontScaledOffsetY(fontSize, fontType),
+            ),
           ],
           font_type: fontType,
-          font_scale_factor: fontSize * CFG.fontScalar * S,
+          font_scale_factor: r3(fontSize * CFG.fontScalar * S),
           text_alignment: p.textAlignment ?? "left",
           shadow: p.shadow ?? false,
           ...(p.color ? { color: p.color } : {}),
@@ -134,9 +182,13 @@ function elementToJsonUi(el: UIElement, namespace: string): {
     case "button": {
       const fontType = p.fontType ?? "MinecraftRegular";
       const json: any = {
-        $default_button_background_texture: toMcTexture(p.defaultTexture),
-        $hover_button_background_texture: toMcTexture(p.hoverTexture),
-        $pressed_button_background_texture: toMcTexture(p.pressedTexture),
+        $default_button_background_texture: ctx.tex(p.defaultTexture ?? ""),
+        $hover_button_background_texture: ctx.tex(
+          p.hoverTexture ?? p.defaultTexture ?? "",
+        ),
+        $pressed_button_background_texture: ctx.tex(
+          p.pressedTexture ?? p.defaultTexture ?? "",
+        ),
 
         $button_offset: offsetOf(p),
         $button_size: sizeOf(p),
@@ -144,7 +196,9 @@ function elementToJsonUi(el: UIElement, namespace: string): {
         layer: 0,
         anchor_from: "top_left",
         anchor_to: "top_left",
-        collection_index: p.collectionIndex ?? 0,
+        // Índice posicional na coleção `form_buttons`: tem que casar com a
+        // ordem dos `form.button(...)` do script.
+        collection_index: ctx.buttonIndex.get(el.id) ?? 0,
 
         $icon_offset: [CFG.buttonImageOffsetX, CFG.buttonImageOffsetY],
         $icon_size: sizeOf(p),
@@ -158,7 +212,11 @@ function elementToJsonUi(el: UIElement, namespace: string): {
         $show_hover_text: false,
       };
       if (bindings) json.bindings = bindings;
-      return { json, link: `@${namespace}.custom_button`, continuePath: false };
+      return {
+        json,
+        link: `@${ctx.namespace}.custom_button`,
+        continuePath: false,
+      };
     }
 
     default:
@@ -170,26 +228,21 @@ function elementToJsonUi(el: UIElement, namespace: string): {
   }
 }
 
-/** Normaliza um caminho de textura do editor para o formato do Minecraft. */
-function toMcTexture(path?: string): string {
-  if (!path) return "textures/ui/White";
-  // remove barra inicial e extensão .png; garante prefixo textures/
-  let t = path.replace(/^\/+/, "").replace(/\.png$/i, "");
-  if (!t.startsWith("textures/")) t = `textures/${t}`;
-  return t;
-}
-
 /** Percorre a árvore recursivamente e monta o mapa de nós JSON UI. */
 function buildTree(
   nodes: UIElement[],
-  namespace: string,
-  depth: number,
+  ctx: BuildCtx,
   parentIsStack = false,
 ): Record<string, any> {
   const out: Record<string, any> = {};
 
   for (const el of nodes) {
-    const { json, link, continuePath } = elementToJsonUi(el, namespace);
+    if (el.type === "scrollingPanel") {
+      out[`${shortId()}-scrolling_panel`] = buildScrollingPanel(el, ctx);
+      continue;
+    }
+
+    const { json, link, continuePath } = elementToJsonUi(el, ctx);
     const def = ELEMENT_DEFINITIONS[el.type];
 
     // Filho de stack_panel: o Minecraft posiciona sozinho — zera o offset.
@@ -198,42 +251,32 @@ function buildTree(
       if ("$button_offset" in json) json.$button_offset = [0, 0];
     }
 
-    // Scrolling panel: gera uma sub-árvore ligada (padrão common.scrolling_panel).
-    if (el.type === "scrollingPanel") {
-      const key =
-        depth === 0
-          ? `${namespace}-${shortId()}`
-          : `${shortId()}-scrolling_panel`;
-      out[key] = buildScrollingPanel(el, namespace, depth);
-      continue;
-    }
-
     if (continuePath && def.isContainer && el.children.length) {
       json.controls = Object.entries(
-        buildTree(el.children, namespace, depth + 1, el.type === "stackPanel"),
+        buildTree(el.children, ctx, el.type === "stackPanel"),
       ).map(([k, v]) => ({ [k]: v }));
     }
 
-    const key =
-      depth === 0 ? `${namespace}${link}` : `${shortId()}-${el.type}${link}`;
-    out[key] = json;
+    out[`${shortId()}-${el.type}${link}`] = json;
   }
 
   return out;
 }
 
 /** Constrói a estrutura de scrolling panel (stack_panel + common.scrolling_panel). */
-function buildScrollingPanel(el: UIElement, namespace: string, depth: number): any {
+function buildScrollingPanel(el: UIElement, ctx: BuildCtx): any {
   const p = el.properties;
   const size = sizeOf(p);
-  const contentLink = `${namespace}.${shortId()}-sc_content`;
+  const contentName = `${shortId()}-sc_content`;
 
   const content = basicPanelScrollingContent();
   if (el.children.length) {
-    content.controls = Object.entries(
-      buildTree(el.children, namespace, depth + 1),
-    ).map(([k, v]) => ({ [k]: v }));
+    content.controls = Object.entries(buildTree(el.children, ctx)).map(
+      ([k, v]) => ({ [k]: v }),
+    );
   }
+  // O conteúdo do scrolling precisa existir como controle de topo do arquivo.
+  ctx.hoisted[contentName] = content;
 
   return {
     type: "stack_panel",
@@ -250,19 +293,17 @@ function buildScrollingPanel(el: UIElement, namespace: string, depth: number): a
           anchor_to: "top_left",
           $show_background: false,
           size: ["100%", "100%"],
-          $scrolling_content: contentLink,
-          $scroll_size: [10 * S, size[1]],
+          $scrolling_content: `${ctx.namespace}.${contentName}`,
+          $scroll_size: [r3(10 * S), size[1]],
           $scrolling_pane_size: size,
-          $scrolling_pane_offset: offsetOf(p),
+          $scrolling_pane_offset: [0, 0],
         },
       },
     ],
-    // A sub-árvore é registrada no nível raiz do arquivo pelo exporter.
-    __scrollingContent: { link: contentLink.split(".")[1], node: content },
   };
 }
 
-/** Gera o objeto JSON UI completo (namespace + templates + elementos). */
+/** Gera o objeto JSON UI completo (namespace + templates + a tela). */
 export function exportToJsonUiObject(
   elements: UIElement[],
   options: ExportOptions,
@@ -270,42 +311,43 @@ export function exportToJsonUiObject(
   idCounter = 0;
   const { namespace } = options;
 
+  const ctx: BuildCtx = {
+    namespace,
+    tex: options.resolveTexture ?? defaultResolver(namespace),
+    omitNineslice: options.omitControlNineslice ?? false,
+    buttonIndex: buildButtonIndexMap(elements),
+    hoisted: {},
+  };
+
+  const controls = Object.entries(buildTree(elements, ctx)).map(([k, v]) => ({
+    [k]: v,
+  }));
+
   const tree: Record<string, any> = {
     namespace,
     custom_button: buttonWithHoverTextTemplate(namespace),
+    hover_text_panel: hoverTextPanelTemplate(),
   };
 
-  const built = buildTree(elements, namespace, 0);
+  // Conteúdos de scrolling panel são controles de topo, não filhos.
+  Object.assign(tree, ctx.hoisted);
 
-  // Extrai conteúdos de scrolling panels para o nível raiz.
-  for (const [key, node] of Object.entries(built)) {
-    hoistScrollingContent(node, tree);
-    tree[key] = node;
-  }
+  // A tela: um panel do tamanho do canvas, centralizado na tela do jogo.
+  tree[namespace] = {
+    type: "panel",
+    size: [r3(CFG.CANVAS_W * S), r3(CFG.CANVAS_H * S)],
+    anchor_from: "center",
+    anchor_to: "center",
+    offset: [0, 0],
+    layer: CFG.SCREEN_LAYER,
+    controls,
+  };
 
   if (options.includeConfig !== false) {
     tree.config = { magicNumbers: serializableConfig() };
   }
 
   return tree;
-}
-
-/** Move os conteúdos de scrolling panels (__scrollingContent) para o topo. */
-function hoistScrollingContent(node: any, tree: Record<string, any>): void {
-  if (!node || typeof node !== "object") return;
-  if (Array.isArray(node)) {
-    node.forEach((n) => hoistScrollingContent(n, tree));
-    return;
-  }
-  if (node.__scrollingContent) {
-    const { link, content } = {
-      link: node.__scrollingContent.link,
-      content: node.__scrollingContent.node,
-    };
-    if (link) tree[link] = content;
-    delete node.__scrollingContent;
-  }
-  for (const v of Object.values(node)) hoistScrollingContent(v, tree);
 }
 
 function serializableConfig() {

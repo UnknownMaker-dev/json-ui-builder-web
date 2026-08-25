@@ -52,6 +52,12 @@ export interface UIProperties {
   defaultTexture?: string;
   hoverTexture?: string;
   pressedTexture?: string;
+  /**
+   * Ícone desenhado dentro do botão. Diferente das texturas de estado: o ícone
+   * vem do script (`form.button(texto, icone)`) via binding da coleção, então
+   * também é escrito no main.js gerado.
+   */
+  iconTexture?: string;
 
   // Stack panel
   orientation?: "vertical" | "horizontal";

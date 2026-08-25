@@ -1,10 +1,18 @@
 /**
- * Templates JSON UI reutilizáveis, portados do projeto original
- * (converterTypes/jsonUITypes.ts). São blocos complexos com bindings de
- * coleção `form_buttons` que fazem os botões de formulário funcionarem no
- * Minecraft. O exporter injeta o `custom_button` no topo do arquivo e os
- * botões o referenciam via `@namespace.custom_button`.
+ * Templates JSON UI reutilizáveis.
+ *
+ * O `custom_button` é o template que faz um botão desenhado no editor virar um
+ * botão de formulário de verdade: ele lê `#form_button_text` e
+ * `#form_button_texture` da coleção `form_buttons` que o `ActionFormData` do
+ * script alimenta.
  */
+
+export interface ScreenRoute {
+  /** Nome amigável da tela — é o que o script manda em `form.title(...)`. */
+  flag: string;
+  /** Namespace do arquivo JSON UI da tela. */
+  namespace: string;
+}
 
 /** Template do botão de formulário com hover text (referenciado pelos botões). */
 export function buttonWithHoverTextTemplate(namespace: string): any {
@@ -25,7 +33,7 @@ export function buttonWithHoverTextTemplate(namespace: string): any {
     "$shadow|default": false,
     "$text_alignment|default": "left",
 
-    "$show_hover_text|default": true,
+    "$show_hover_text|default": false,
 
     type: "panel",
     size: "$button_size",
@@ -39,15 +47,6 @@ export function buttonWithHoverTextTemplate(namespace: string): any {
           offset: "$button_offset",
           anchor_from: "top_left",
           anchor_to: "top_left",
-          bindings: [
-            {
-              binding_type: "view",
-              source_control_name: "image",
-              resolve_sibling_scope: true,
-              source_property_name: "(not (#texture = ''))",
-              target_property_name: "#visible",
-            },
-          ],
           controls: [
             {
               image: {
@@ -88,6 +87,7 @@ export function buttonWithHoverTextTemplate(namespace: string): any {
                 font_type: "$font_type",
                 font_scale_factor: "$font_size",
                 layer: 5,
+                size: ["100%", "default"],
                 text_alignment: "$text_alignment",
                 shadow: "$shadow",
                 offset: "$text_offset",
@@ -143,8 +143,39 @@ export function buttonWithHoverTextTemplate(namespace: string): any {
       },
       {
         binding_type: "view",
-        source_property_name: "(not (#form_button_text = '') )",
+        source_property_name: "(not (#form_button_text = ''))",
         target_property_name: "#visible",
+      },
+    ],
+  };
+}
+
+/**
+ * Painel de hover text. O `custom_button` referencia este controle quando
+ * `$show_hover_text` é verdadeiro; o original citava o nome sem nunca definir
+ * o controle, o que deixaria uma referência solta no arquivo.
+ */
+export function hoverTextPanelTemplate(): any {
+  return {
+    type: "panel",
+    size: ["100%", "100%"],
+    controls: [
+      {
+        hover_text: {
+          type: "label",
+          anchor_from: "center",
+          anchor_to: "center",
+          text: "#form_button_text",
+          color: [1, 1, 1],
+          layer: 300,
+          bindings: [
+            {
+              binding_name: "#form_button_text",
+              binding_type: "collection",
+              binding_collection_name: "form_buttons",
+            },
+          ],
+        },
       },
     ],
   };
@@ -161,51 +192,159 @@ export function basicPanelScrollingContent(): any {
   };
 }
 
-/** Gera o arquivo server_form.json (wrapper de dialog long_form). */
-export function serverFormTemplate(namespace: string, titleFlag: string): string {
-  return `{
-    "namespace": "server_form",
+/** Quantos botões o formulário padrão de reserva consegue mostrar. */
+const FALLBACK_SLOTS = 12;
 
-    "long_form": {
-        "type": "panel",
-        "size": ["100%", "100%"],
-        "controls": [
-            {
-                "long_form@common_dialogs.main_panel_no_buttons": {
-                    "$title_panel": "common_dialogs.standard_title_label",
-                    "$title_size": ["100% - 15px", 10],
-                    "$title_max_size": ["100% - 15px", 10],
-                    "size": [225, 200],
-                    "$text_name": "#title_text",
-                    "$title_text_binding_type": "none",
-                    "$child_control": "server_form.long_form_panel",
-                    "layer": 2,
-
-                    "bindings": [
-                        { "binding_name": "#title_text" },
-                        {
-                            "binding_type": "view",
-                            "source_property_name": "((#title_text - '${titleFlag}') = #title_text)",
-                            "target_property_name": "#visible"
-                        }
-                    ]
-                }
-            },
-            {
-                "${namespace}@${namespace}.${namespace}": {
-                    "layer": 2,
-                    "bindings": [
-                        { "binding_name": "#title_text" },
-                        {
-                            "binding_type": "view",
-                            "source_property_name": "( not ((#title_text - '${titleFlag}') = #title_text))",
-                            "target_property_name": "#visible"
-                        }
-                    ]
-                }
-            }
-        ]
-    }
+/**
+ * Botão do formulário padrão de reserva (visual simples do Minecraft).
+ * Cada fatia é fixa numa posição da coleção e se esconde quando o formulário
+ * tem menos botões que isso.
+ */
+function fallbackButton(index: number): any {
+  return {
+    [`slot_${index}@server_form.fallback_button`]: {
+      collection_index: index,
+      offset: [0, index * 22],
+    },
+  };
 }
-`;
+
+/**
+ * Gera o `ui/server_form.json`.
+ *
+ * Este arquivo tem o nome de uma tela do jogo, então SUBSTITUI a original por
+ * completo (JSON-UI.md, seção 2). Ele faz duas coisas:
+ *
+ * 1. Roteia: para cada tela criada no editor, mostra o painel dela quando o
+ *    título do formulário contém o nome daquela tela. O teste de "contém" é a
+ *    subtração de string da seção 9 do JSON-UI.md.
+ * 2. Reconstrói um formulário padrão simples para quando o título não casa com
+ *    tela nenhuma — sem isso, qualquer outro formulário do mundo abriria vazio.
+ */
+export function serverFormTemplate(routes: ScreenRoute[]): string {
+  // "Não bateu com nenhuma tela": tirar todas as chaves não mudou o título.
+  const noneMatch = `((#title_text${routes
+    .map((r) => ` - '${r.flag}'`)
+    .join("")}) = #title_text)`;
+
+  const controls: any[] = [
+    {
+      "standard_form@common_dialogs.main_panel_no_buttons": {
+        $title_panel: "common_dialogs.standard_title_label",
+        $title_size: ["100% - 15px", 10],
+        $title_max_size: ["100% - 15px", 10],
+        size: [225, 200],
+        $text_name: "#title_text",
+        $title_text_binding_type: "none",
+        $child_control: "server_form.long_form_panel",
+        layer: 2,
+        bindings: [
+          { binding_name: "#title_text" },
+          {
+            binding_type: "view",
+            source_property_name: noneMatch,
+            target_property_name: "#visible",
+          },
+        ],
+      },
+    },
+  ];
+
+  // Uma entrada por tela do editor.
+  for (const route of routes) {
+    controls.push({
+      [`${route.namespace}@${route.namespace}.${route.namespace}`]: {
+        layer: 10,
+        bindings: [
+          { binding_name: "#title_text" },
+          {
+            binding_type: "view",
+            source_property_name: `(not ((#title_text - '${route.flag}') = #title_text))`,
+            target_property_name: "#visible",
+          },
+        ],
+      },
+    });
+  }
+
+  const doc = {
+    namespace: "server_form",
+
+    // Botão de reserva: o mesmo mecanismo de coleção, com visual padrão.
+    fallback_button: {
+      type: "panel",
+      size: ["100%", 20],
+      anchor_from: "top_left",
+      anchor_to: "top_left",
+      controls: [
+        {
+          "btn@common_buttons.light_content_button": {
+            size: ["100%", 20],
+            $pressed_button_name: "button.form_button_click",
+            $button_text: "#form_button_text",
+            $button_text_binding_type: "collection",
+            $button_text_grid_collection_name: "form_buttons",
+            bindings: [
+              {
+                binding_type: "collection_details",
+                binding_collection_name: "form_buttons",
+              },
+            ],
+          },
+        },
+      ],
+      bindings: [
+        {
+          binding_name: "#form_button_text",
+          binding_type: "collection",
+          binding_collection_name: "form_buttons",
+        },
+        {
+          binding_type: "view",
+          source_property_name: "(not (#form_button_text = ''))",
+          target_property_name: "#visible",
+        },
+      ],
+    },
+
+    // Corpo do formulário padrão: o texto e as fatias de botão.
+    long_form_panel: {
+      type: "panel",
+      size: ["100%", "100%"],
+      controls: [
+        {
+          form_text: {
+            type: "label",
+            anchor_from: "top_left",
+            anchor_to: "top_left",
+            offset: [4, 2],
+            size: ["100% - 8px", "default"],
+            text: "#form_text",
+            color: [0.85, 0.85, 0.85],
+            bindings: [{ binding_name: "#form_text" }],
+          },
+        },
+        {
+          buttons_area: {
+            type: "panel",
+            anchor_from: "top_left",
+            anchor_to: "top_left",
+            offset: [4, 26],
+            size: ["100% - 8px", "100% - 30px"],
+            controls: Array.from({ length: FALLBACK_SLOTS }, (_, i) =>
+              fallbackButton(i),
+            ),
+          },
+        },
+      ],
+    },
+
+    long_form: {
+      type: "panel",
+      size: ["100%", "100%"],
+      controls,
+    },
+  };
+
+  return JSON.stringify(doc, null, 4) + "\n";
 }

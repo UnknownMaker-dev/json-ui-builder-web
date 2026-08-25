@@ -6,16 +6,196 @@ import {
   type UIElement,
   type UIElementType,
 } from "../types/element.types";
+import { toNamespace, type UIScreen } from "../types/screen.types";
 
 // Reexporta para compatibilidade com imports antigos (`import { UIElement } from stores`).
 export type { UIElement } from "../types/element.types";
 
-export const useEditorStore = defineStore("editor", () => {
-  const elements = ref<UIElement[]>([]);
-  const selectedElementId = ref<string | null>(null);
+/** Versão da API de script do Bedrock usada no manifest do behavior pack. */
+export type ScriptApi = "1.x" | "2.x";
 
-  /** Namespace do arquivo JSON UI gerado (editável nas configurações). */
-  const projectNamespace = ref<string>("custom_form");
+function newScreen(name: string): UIScreen {
+  return {
+    id: crypto.randomUUID(),
+    name,
+    namespace: toNamespace(name),
+    elements: [],
+    selectedElementId: null,
+  };
+}
+
+export const useEditorStore = defineStore("editor", () => {
+  // --- TELAS (ABAS) ---
+  const screens = ref<UIScreen[]>([newScreen("Custom UI")]);
+  const activeScreenId = ref<string>(screens.value[0].id);
+
+  const activeScreen = computed<UIScreen>(
+    () => screens.value.find((s) => s.id === activeScreenId.value) ?? screens.value[0],
+  );
+
+  /**
+   * A árvore da tela ativa. Exposta com este nome para que todos os componentes
+   * do editor continuem funcionando sem saber que existem várias telas.
+   */
+  const elements = computed<UIElement[]>({
+    get: () => activeScreen.value.elements,
+    set: (next) => {
+      activeScreen.value.elements = next;
+    },
+  });
+
+  const selectedElementId = computed<string | null>({
+    get: () => activeScreen.value.selectedElementId,
+    set: (next) => {
+      activeScreen.value.selectedElementId = next;
+    },
+  });
+
+  // --- PROJETO / PACOTE ---
+  /** Nome do pacote mostrado na lista de recursos do Minecraft. */
+  const packName = ref<string>("Meu Pack de UI");
+  /** Item que abre o menu no script gerado. */
+  const triggerItem = ref<string>("minecraft:stick");
+  /** Versão da API de script declarada no manifest do behavior pack. */
+  const scriptApi = ref<ScriptApi>("1.x");
+
+  /** Compatibilidade: o namespace do JSON UI é o da tela ativa. */
+  const projectNamespace = computed<string>({
+    get: () => activeScreen.value.namespace,
+    set: (next) => {
+      activeScreen.value.namespace = next;
+    },
+  });
+
+  function addScreen(name?: string) {
+    const base = name ?? `Tela ${screens.value.length + 1}`;
+    const screen = newScreen(uniqueScreenName(base));
+    screens.value.push(screen);
+    activeScreenId.value = screen.id;
+    ensureHistory(screen.id);
+  }
+
+  /** Garante que duas telas nunca tenham o mesmo nome (o nome é a chave da rota). */
+  function uniqueScreenName(desired: string, ignoreId?: string): string {
+    const taken = new Set(
+      screens.value.filter((s) => s.id !== ignoreId).map((s) => s.name.toLowerCase()),
+    );
+    if (!taken.has(desired.toLowerCase())) return desired;
+    let n = 2;
+    while (taken.has(`${desired} ${n}`.toLowerCase())) n++;
+    return `${desired} ${n}`;
+  }
+
+  function renameScreen(id: string, name: string) {
+    const screen = screens.value.find((s) => s.id === id);
+    if (!screen) return;
+    screen.name = uniqueScreenName(name.trim() || "Tela", id);
+    screen.namespace = toNamespace(screen.name);
+  }
+
+  function removeScreen(id: string) {
+    if (screens.value.length <= 1) return;
+    const index = screens.value.findIndex((s) => s.id === id);
+    if (index === -1) return;
+    screens.value.splice(index, 1);
+    delete histories[id];
+    if (activeScreenId.value === id) {
+      activeScreenId.value = screens.value[Math.max(0, index - 1)].id;
+    }
+  }
+
+  function duplicateScreen(id: string) {
+    const source = screens.value.find((s) => s.id === id);
+    if (!source) return;
+    const copy: UIScreen = {
+      id: crypto.randomUUID(),
+      name: uniqueScreenName(`${source.name} Cópia`),
+      namespace: "",
+      elements: JSON.parse(JSON.stringify(source.elements)),
+      selectedElementId: null,
+    };
+    copy.namespace = toNamespace(copy.name);
+    const reid = (nodes: UIElement[]) => {
+      for (const n of nodes) {
+        n.id = crypto.randomUUID();
+        reid(n.children);
+      }
+    };
+    reid(copy.elements);
+    screens.value.push(copy);
+    activeScreenId.value = copy.id;
+    ensureHistory(copy.id);
+  }
+
+  function selectScreen(id: string) {
+    if (screens.value.some((s) => s.id === id)) activeScreenId.value = id;
+  }
+
+  /**
+   * Nomes de tela onde um é trecho do outro quebram o roteamento: a subtração
+   * de string casaria as duas ao mesmo tempo e o jogo mostraria as duas telas
+   * sobrepostas. Detectado aqui para avisar antes de exportar.
+   */
+  const screenNameConflicts = computed(() => {
+    const out: { a: string; b: string }[] = [];
+    const list = screens.value;
+    for (let i = 0; i < list.length; i++) {
+      for (let j = 0; j < list.length; j++) {
+        if (i === j) continue;
+        const a = list[i].name.trim();
+        const b = list[j].name.trim();
+        if (a && b && a !== b && b.includes(a)) out.push({ a, b });
+      }
+    }
+    return out;
+  });
+
+  // --- HISTÓRICO (UNDO/REDO) POR TELA ---
+  interface History {
+    stack: string[];
+    index: number;
+  }
+  const histories: Record<string, History> = {};
+  let isUndoRedo = false;
+
+  function ensureHistory(id: string): History {
+    if (!histories[id]) {
+      const screen = screens.value.find((s) => s.id === id);
+      histories[id] = { stack: [JSON.stringify(screen?.elements ?? [])], index: 0 };
+    }
+    return histories[id];
+  }
+  ensureHistory(activeScreenId.value);
+
+  function saveSnapshot() {
+    if (isUndoRedo) return;
+    const h = ensureHistory(activeScreenId.value);
+    const snapshot = JSON.stringify(elements.value);
+    if (h.index >= 0 && h.stack[h.index] === snapshot) return;
+    if (h.index < h.stack.length - 1) h.stack = h.stack.slice(0, h.index + 1);
+    h.stack.push(snapshot);
+    h.index++;
+  }
+
+  function undo() {
+    const h = ensureHistory(activeScreenId.value);
+    if (h.index > 0) {
+      isUndoRedo = true;
+      h.index--;
+      elements.value = JSON.parse(h.stack[h.index]);
+      isUndoRedo = false;
+    }
+  }
+
+  function redo() {
+    const h = ensureHistory(activeScreenId.value);
+    if (h.index < h.stack.length - 1) {
+      isUndoRedo = true;
+      h.index++;
+      elements.value = JSON.parse(h.stack[h.index]);
+      isUndoRedo = false;
+    }
+  }
 
   /**
    * Trava de proporção: quando ativa, o resize mantém a razão largura/altura
@@ -25,46 +205,6 @@ export const useEditorStore = defineStore("editor", () => {
   function toggleAspectLock() {
     aspectLocked.value = !aspectLocked.value;
   }
-
-  // --- SISTEMA DE HISTÓRICO (UNDO/REDO) ---
-  const history = ref<string[]>([]);
-  const historyIndex = ref(-1);
-  let isUndoRedo = false;
-
-  function saveSnapshot() {
-    if (isUndoRedo) return;
-    const snapshot = JSON.stringify(elements.value);
-    if (
-      historyIndex.value >= 0 &&
-      history.value[historyIndex.value] === snapshot
-    )
-      return;
-    if (historyIndex.value < history.value.length - 1) {
-      history.value = history.value.slice(0, historyIndex.value + 1);
-    }
-    history.value.push(snapshot);
-    historyIndex.value++;
-  }
-
-  function undo() {
-    if (historyIndex.value > 0) {
-      isUndoRedo = true;
-      historyIndex.value--;
-      elements.value = JSON.parse(history.value[historyIndex.value]);
-      isUndoRedo = false;
-    }
-  }
-
-  function redo() {
-    if (historyIndex.value < history.value.length - 1) {
-      isUndoRedo = true;
-      historyIndex.value++;
-      elements.value = JSON.parse(history.value[historyIndex.value]);
-      isUndoRedo = false;
-    }
-  }
-
-  saveSnapshot();
 
   const selectedElement = computed(() => {
     const findElement = (nodes: UIElement[]): UIElement | undefined => {
@@ -122,6 +262,18 @@ export const useEditorStore = defineStore("editor", () => {
     }
 
     selectElement(newElement.id);
+    saveSnapshot();
+    return newElement;
+  }
+
+  /**
+   * Insere um elemento já montado no fim da raiz da tela (usado pela importação
+   * de imagem de fundo, que precisa nascer atrás de tudo).
+   */
+  function addRootElement(element: UIElement, atBack = false) {
+    if (atBack) elements.value.unshift(element);
+    else elements.value.push(element);
+    selectElement(element.id);
     saveSnapshot();
   }
 
@@ -210,21 +362,21 @@ export const useEditorStore = defineStore("editor", () => {
     saveSnapshot();
   }
 
-  /** Substitui toda a árvore (usado na importação). */
+  /** Substitui toda a árvore da tela ativa (usado na importação). */
   function setElements(next: UIElement[]) {
     elements.value = next;
     selectedElementId.value = null;
     saveSnapshot();
   }
 
-  /** Limpa o projeto. */
+  /** Limpa a tela ativa. */
   function reset() {
     elements.value = [];
     selectedElementId.value = null;
     saveSnapshot();
   }
 
-  // --- COPIAR E COLAR ---
+  // --- COPIAR E COLAR (compartilhado entre telas) ---
   const clipboard = ref<UIElement | null>(null);
 
   function copyElement() {
@@ -261,6 +413,21 @@ export const useEditorStore = defineStore("editor", () => {
   }
 
   return {
+    // telas
+    screens,
+    activeScreenId,
+    activeScreen,
+    addScreen,
+    renameScreen,
+    removeScreen,
+    duplicateScreen,
+    selectScreen,
+    screenNameConflicts,
+    // pacote
+    packName,
+    triggerItem,
+    scriptApi,
+    // árvore da tela ativa
     elements,
     selectedElementId,
     selectedElement,
@@ -268,6 +435,7 @@ export const useEditorStore = defineStore("editor", () => {
     aspectLocked,
     toggleAspectLock,
     addElement,
+    addRootElement,
     deleteElement,
     selectElement,
     nudgeSelected,
