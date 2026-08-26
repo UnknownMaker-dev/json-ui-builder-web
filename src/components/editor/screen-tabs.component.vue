@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "../../i18n";
 /**
  * Barra de abas: uma aba por tela do projeto.
  *
@@ -37,7 +38,7 @@ const close = (id: string) => {
   if (editorStore.screens.length <= 1) return;
   const screen = editorStore.screens.find((s) => s.id === id);
   const hasWork = screen && screen.elements.length > 0;
-  if (hasWork && !confirm(`Apagar a tela "${screen!.name}" e tudo nela?`)) return;
+  if (hasWork && !confirm(t("tabs.confirmDelete", { name: screen!.name }))) return;
   editorStore.removeScreen(id);
 };
 </script>
@@ -65,13 +66,13 @@ const close = (id: string) => {
           @click.stop
         />
         <template v-else>
-          <span class="tab-name" :title="`Duplo clique para renomear`">{{
+          <span class="tab-name" :title='t("tabs.rename")'>{{
             screen.name
           }}</span>
           <span class="tab-count">{{ screen.elements.length }}</span>
           <button
             class="tab-action"
-            title="Duplicar tela"
+            :title='t("tabs.duplicate")'
             @click.stop="editorStore.duplicateScreen(screen.id)"
           >
             <Copy :size="12" />
@@ -79,7 +80,7 @@ const close = (id: string) => {
           <button
             v-if="editorStore.screens.length > 1"
             class="tab-action"
-            title="Fechar tela"
+            :title='t("tabs.close")'
             @click.stop="close(screen.id)"
           >
             <X :size="13" />
@@ -88,17 +89,18 @@ const close = (id: string) => {
       </div>
 
       <button class="tab-add" title="Nova tela" @click="editorStore.addScreen()">
-        <Plus :size="15" /> Nova tela
+        <Plus :size="15" /> {{ t("tabs.new") }}
       </button>
     </div>
 
     <div v-if="editorStore.screenNameConflicts.length" class="conflict">
       <AlertTriangle :size="14" />
-      <span>
-        O nome <b>{{ editorStore.screenNameConflicts[0].a }}</b> está contido em
-        <b>{{ editorStore.screenNameConflicts[0].b }}</b> — no jogo as duas telas
-        abririam juntas. Renomeie uma delas.
-      </span>
+      <span>{{
+        t("tabs.conflict", {
+          a: editorStore.screenNameConflicts[0].a,
+          b: editorStore.screenNameConflicts[0].b,
+        })
+      }}</span>
     </div>
   </div>
 </template>

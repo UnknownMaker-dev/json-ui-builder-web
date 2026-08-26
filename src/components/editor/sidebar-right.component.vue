@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "../../i18n";
 import { assetUrl } from "../../utils/asset-url";
 import { ref, computed } from "vue";
 import {
@@ -88,14 +89,14 @@ const stackIsHorizontal = computed(
 const stackAlignOptions = computed(() =>
   stackIsHorizontal.value
     ? [
-        { value: "start", label: "Topo", icon: AlignStartHorizontal },
-        { value: "center", label: "Meio", icon: AlignCenterHorizontal },
-        { value: "end", label: "Base", icon: AlignEndHorizontal },
+        { value: "start", label: t("props.top"), icon: AlignStartHorizontal },
+        { value: "center", label: t("props.middle"), icon: AlignCenterHorizontal },
+        { value: "end", label: t("props.bottom"), icon: AlignEndHorizontal },
       ]
     : [
-        { value: "start", label: "Esquerda", icon: AlignStartVertical },
-        { value: "center", label: "Centro", icon: AlignCenterVertical },
-        { value: "end", label: "Direita", icon: AlignEndVertical },
+        { value: "start", label: t("props.left"), icon: AlignStartVertical },
+        { value: "center", label: t("props.center"), icon: AlignCenterVertical },
+        { value: "end", label: t("props.right"), icon: AlignEndVertical },
       ],
 );
 
@@ -117,14 +118,14 @@ const ownIsHorizontal = computed(
 const stackJustifyOptions = computed(() =>
   ownIsHorizontal.value
     ? [
-        { value: "start", label: "À esquerda", icon: AlignStartVertical },
-        { value: "center", label: "No meio", icon: AlignCenterVertical },
-        { value: "end", label: "À direita", icon: AlignEndVertical },
+        { value: "start", label: t("props.toLeft"), icon: AlignStartVertical },
+        { value: "center", label: t("props.toMiddle"), icon: AlignCenterVertical },
+        { value: "end", label: t("props.toRight"), icon: AlignEndVertical },
       ]
     : [
-        { value: "start", label: "No topo", icon: AlignStartHorizontal },
+        { value: "start", label: t("props.toTop"), icon: AlignStartHorizontal },
         { value: "center", label: "No meio", icon: AlignCenterHorizontal },
-        { value: "end", label: "Na base", icon: AlignEndHorizontal },
+        { value: "end", label: t("props.toBottom"), icon: AlignEndHorizontal },
       ],
 );
 
@@ -143,7 +144,7 @@ const stateLabels: Record<string, string> = {
 
 <template>
   <aside class="sidebar-right">
-    <h2><SlidersHorizontal :size="14" /> Propriedades</h2>
+    <h2><SlidersHorizontal :size="14" /> {{ t("props.title") }}</h2>
 
     <div v-if="el" class="properties-panel">
       <div class="type-chip">
@@ -153,26 +154,26 @@ const stateLabels: Record<string, string> = {
       </div>
 
       <div class="field">
-        <label>Nome (Explorer)</label>
+        <label>{{ t("props.name") }}</label>
         <input type="text" v-model="el.name" @change="save" />
       </div>
 
       <div class="field" v-if="el.properties.text !== undefined">
-        <label>Texto</label>
+        <label>{{ t("props.text") }}</label>
         <input type="text" v-model="el.properties.text" @change="save" />
       </div>
 
       <template v-if="isTextType">
         <div class="row">
           <div class="field">
-            <label>Fonte</label>
+            <label>{{ t("props.font") }}</label>
             <select v-model="el.properties.fontType" @change="save">
               <option v-for="f in MINECRAFT_FONTS" :key="f" :value="f">{{ f }}</option>
             </select>
           </div>
           <div class="field">
             <PropSlider
-              label="Tam. fonte"
+              :label='t("props.fontSize")'
               :min="0.5"
               :max="8"
               :step="0.1"
@@ -183,33 +184,33 @@ const stateLabels: Record<string, string> = {
         </div>
         <div class="row">
           <div class="field">
-            <label>Alinhamento</label>
+            <label>{{ t("props.alignment") }}</label>
             <select v-model="el.properties.textAlignment" @change="save">
-              <option value="left">left</option>
-              <option value="center">center</option>
-              <option value="right">right</option>
+              <option value="left">{{ t("props.alignLeft") }}</option>
+              <option value="center">{{ t("props.alignCenter") }}</option>
+              <option value="right">{{ t("props.alignRight") }}</option>
             </select>
           </div>
           <label class="toggle">
             <input type="checkbox" v-model="el.properties.shadow" @change="save" />
-            <span>Sombra</span>
+            <span>{{ t("props.shadow") }}</span>
           </label>
         </div>
       </template>
 
       <template v-if="el.type === 'stackPanel'">
         <div class="field">
-          <label>Orientação</label>
+          <label>{{ t("props.orientation") }}</label>
           <select v-model="el.properties.orientation" @change="save">
-            <option value="vertical">vertical</option>
-            <option value="horizontal">horizontal</option>
+            <option value="vertical">{{ t("props.vertical") }}</option>
+            <option value="horizontal">{{ t("props.horizontal") }}</option>
           </select>
         </div>
 
         <div class="align-row stack-align">
           <span class="align-label">
-            Distribuir os filhos
-            <em>{{ ownIsHorizontal ? "ao longo da largura" : "ao longo da altura" }}</em>
+            {{ t("props.distribute") }}
+            <em>{{ ownIsHorizontal ? t("props.alongWidth") : t("props.alongHeight") }}</em>
           </span>
           <div class="align-btns">
             <button
@@ -226,7 +227,7 @@ const stateLabels: Record<string, string> = {
         </div>
 
         <PropSlider
-          label="Espaçamento"
+          :label='t("props.spacing")'
           unit="px"
           :min="0"
           :max="80"
@@ -236,7 +237,7 @@ const stateLabels: Record<string, string> = {
           @change="save"
         />
         <PropSlider
-          label="Recuo interno"
+          :label='t("props.padding")'
           unit="px"
           :min="0"
           :max="80"
@@ -246,21 +247,21 @@ const stateLabels: Record<string, string> = {
           @change="save"
         />
         <p class="stack-note">
-          JSON UI não tem margin: o espaço vira painel vazio entre os itens.
+          {{ t("props.noMargin") }}
         </p>
       </template>
 
       <div class="field" v-if="el.type === 'collectionPanel'">
-        <label>Collection Name</label>
+        <label>{{ t("props.collectionName") }}</label>
         <input type="text" v-model="el.properties.collectionName" @change="save" />
       </div>
 
       <!-- Textura única -->
       <div class="field" v-if="hasTexture">
-        <label>Textura</label>
+        <label>{{ t("props.texture") }}</label>
         <button class="tex-slot" @click="openPicker('texture')">
           <img v-if="el.properties.texture" :src="assetUrl(el.properties.texture)" />
-          <span v-else class="tex-empty"><ImagePlus :size="18" /> escolher</span>
+          <span v-else class="tex-empty"><ImagePlus :size="18" /> {{ t("props.choose") }}</span>
         </button>
       </div>
 
@@ -282,7 +283,7 @@ const stateLabels: Record<string, string> = {
 
         <!-- Ícone: vem do script, não do JSON UI -->
         <div class="field">
-          <label>Ícone do botão</label>
+          <label>{{ t("props.buttonIcon") }}</label>
           <div class="icon-row">
             <button class="tex-slot square" @click="openPicker('iconTexture')">
               <img
@@ -293,16 +294,15 @@ const stateLabels: Record<string, string> = {
             </button>
             <div class="icon-help">
               <p>
-                Desenhado dentro do botão. Diferente das texturas de estado: o
-                ícone é enviado pelo script em
-                <code>form.button(texto, ícone)</code>.
+                {{ t("props.iconHelp") }}
+                <code>form.button(text, icon)</code>.
               </p>
               <button
                 v-if="el.properties.iconTexture"
                 class="icon-clear"
                 @click="el.properties.iconTexture = undefined; save()"
               >
-                remover ícone
+                {{ t("props.removeIcon") }}
               </button>
             </div>
           </div>
@@ -311,7 +311,7 @@ const stateLabels: Record<string, string> = {
 
       <div class="field" v-if="hasTexture || el.type === 'button'">
         <PropSlider
-          label="NineSlice"
+          :label='t("props.nineslice")'
           unit="px"
           :min="0"
           :max="32"
@@ -323,30 +323,30 @@ const stateLabels: Record<string, string> = {
 
       <div class="group">
         <span class="group-title">
-          Posição & Tamanho
-          <em v-if="el.type === 'label'" class="derived">tamanho segue a fonte</em>
+          {{ t("props.layout") }}
+          <em v-if="el.type === 'label'" class="derived">{{ t("props.sizeFollowsFont") }}</em>
         </span>
 
         <div class="align-row" v-if="canCenter">
-          <span class="align-label">Centralizar no container</span>
+          <span class="align-label">{{ t("props.centerIn") }}</span>
           <div class="align-btns">
             <button
               class="align-btn"
-              title="Centralizar na horizontal"
+              :title='t("props.centerH")'
               @click="editorStore.centerSelected('h')"
             >
               <AlignHorizontalJustifyCenter :size="16" />
             </button>
             <button
               class="align-btn"
-              title="Centralizar na vertical"
+              :title='t("props.centerV")'
               @click="editorStore.centerSelected('v')"
             >
               <AlignVerticalJustifyCenter :size="16" />
             </button>
             <button
               class="align-btn accent"
-              title="Centralizar (ambos)"
+              :title='t("props.centerBoth")'
               @click="editorStore.centerSelected('both')"
             >
               <Crosshair :size="16" />
@@ -356,8 +356,8 @@ const stateLabels: Record<string, string> = {
 
         <div class="align-row stack-align" v-if="inStack">
           <span class="align-label">
-            Alinhar na pilha
-            <em>{{ stackIsHorizontal ? "pilha horizontal" : "pilha vertical" }}</em>
+            {{ t("props.alignInStack") }}
+            <em>{{ stackIsHorizontal ? t("props.stackHorizontal") : t("props.stackVertical") }}</em>
           </span>
           <div class="align-btns">
             <button
@@ -375,7 +375,7 @@ const stateLabels: Record<string, string> = {
 
         <PropSlider
           v-if="inStack"
-          label="Margem antes"
+          :label='t("props.marginBefore")'
           unit="px"
           :min="0"
           :max="120"
@@ -386,32 +386,30 @@ const stateLabels: Record<string, string> = {
         />
 
         <p class="stack-note" v-if="inStack">
-          O {{ stackIsHorizontal ? "X" : "Y" }} é decidido pela ordem na pilha —
-          use as setas para reordenar. Espaçamento entre todos os itens fica no
-          próprio stack panel.
+          {{ t("props.stackNote", { axis: stackIsHorizontal ? "X" : "Y" }) }}
         </p>
 
         <PropSlider label="X" unit="px" :min="0" :max="800" v-model="el.properties.x" @change="save" :disabled="inStack" />
         <PropSlider label="Y" unit="px" :min="0" :max="600" v-model="el.properties.y" @change="save" :disabled="inStack" />
-        <PropSlider label="Largura" unit="px" :min="1" :max="800" v-model="el.properties.width" :disabled="el.type === 'label'" @change="save" />
-        <PropSlider label="Altura" unit="px" :min="1" :max="600" v-model="el.properties.height" :disabled="el.type === 'label'" @change="save" />
+        <PropSlider :label='t("props.width")' unit="px" :min="1" :max="800" v-model="el.properties.width" :disabled="el.type === 'label'" @change="save" />
+        <PropSlider :label='t("props.height")' unit="px" :min="1" :max="600" v-model="el.properties.height" :disabled="el.type === 'label'" @change="save" />
       </div>
 
       <button class="collapse-btn" @click="showBindings = !showBindings">
         <component :is="showBindings ? ChevronDown : ChevronRight" :size="15" />
-        Bindings
+        {{ t("props.bindings") }}
         <span class="count">{{ el.properties.bindings?.length || 0 }}</span>
       </button>
       <BindingsEditor v-if="showBindings" />
 
       <button class="btn-delete" @click="handleDelete">
-        <Trash2 :size="15" /> Deletar Elemento
+        <Trash2 :size="15" /> {{ t("props.delete") }}
       </button>
     </div>
 
     <div v-else class="no-selection">
       <MousePointer2 :size="26" />
-      <p>Selecione um elemento no canvas ou no Explorer.</p>
+      <p>{{ t("props.noSelection") }}</p>
     </div>
 
     <TexturePicker

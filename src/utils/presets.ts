@@ -119,6 +119,9 @@ export async function loadNinesliceFor(
 
 const CUSTOM_KEY = "jsonui_custom_textures";
 
+/** Chave do grupo das texturas do usuário. O rótulo mostrado é traduzido na interface. */
+export const CUSTOM_STYLE = "__custom__";
+
 interface StoredCustomTexture extends TextureEntry {
   ninesliceData?: {
     nineslice_size: number | number[];
@@ -177,7 +180,7 @@ export async function addCustomTexture(
     name: png.name.replace(/\.png$/i, ""),
     url,
     nineslice: !!ninesliceData,
-    style: "Minhas Texturas",
+    style: CUSTOM_STYLE,
     custom: true,
     ninesliceData,
   };
