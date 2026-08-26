@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "./i18n";
 import { ref } from "vue";
 import { Boxes, SlidersHorizontal, Lock, Unlock } from "lucide-vue-next";
 import { useEditorStore } from "./stores/editor.store";
@@ -50,18 +51,18 @@ const closeDrawers = () => {
     <nav class="mobile-bar">
       <button :class="{ active: leftOpen }" @click="openLeft">
         <Boxes :size="20" />
-        <span>Elementos</span>
+        <span>{{ t("mobile.elements") }}</span>
       </button>
       <button
         :class="{ active: editorStore.aspectLocked }"
         @click="editorStore.toggleAspectLock()"
       >
         <component :is="editorStore.aspectLocked ? Lock : Unlock" :size="20" />
-        <span>Proporção</span>
+        <span>{{ t("mobile.aspect") }}</span>
       </button>
       <button :class="{ active: rightOpen }" @click="openRight">
         <SlidersHorizontal :size="20" />
-        <span>Propriedades</span>
+        <span>{{ t("mobile.properties") }}</span>
       </button>
     </nav>
   </div>

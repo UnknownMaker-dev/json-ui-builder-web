@@ -18,6 +18,7 @@ import {
   Save,
 } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
+import { t, locale, setLocale, LOCALES } from "../../i18n";
 import { exportToJsonUiString } from "../../utils/json-ui-exporter";
 import { importFromJsonUi } from "../../utils/json-ui-importer";
 import { serverFormTemplate } from "../../utils/json-ui-templates";
@@ -95,7 +96,7 @@ const onProjectFile = async (e: Event) => {
 
   const result = parseProject(await file.text());
   if (!result.ok || !result.project) {
-    alert("Não consegui abrir o projeto: " + (result.error ?? "desconhecido"));
+    alert(t("toolbar.openFailed", { reason: result.error ?? t("toolbar.unknown") }));
     return;
   }
   editorStore.loadProject(result.project);
@@ -110,7 +111,7 @@ const onImportFile = async (e: Event) => {
   if (result.ok && result.elements) {
     editorStore.setElements(result.elements);
   } else {
-    alert("Falha ao importar: " + (result.error ?? "desconhecido"));
+    alert(t("toolbar.importFailed", { reason: result.error ?? t("toolbar.unknown") }));
   }
   (e.target as HTMLInputElement).value = "";
 };
@@ -126,27 +127,27 @@ const onImportFile = async (e: Event) => {
     <div class="divider"></div>
 
     <div class="ns-field">
-      <label>pacote</label>
+      <label>{{ t("toolbar.pack") }}</label>
       <input
         v-model="editorStore.packName"
         class="ns-input"
         spellcheck="false"
-        title="Nome do resource pack gerado"
+        :title='t("toolbar.packTitle")'
       />
     </div>
 
     <div class="icon-group">
-      <button class="icon-btn" @click="editorStore.undo()" title="Desfazer (Ctrl+Z)">
+      <button class="icon-btn" @click="editorStore.undo()" :title='t("toolbar.undo")'>
         <Undo2 :size="17" />
       </button>
-      <button class="icon-btn" @click="editorStore.redo()" title="Refazer (Ctrl+Y)">
+      <button class="icon-btn" @click="editorStore.redo()" :title='t("toolbar.redo")'>
         <Redo2 :size="17" />
       </button>
       <button
         class="icon-btn"
         :class="{ on: editorStore.aspectLocked }"
         @click="editorStore.toggleAspectLock()"
-        title="Manter proporção ao redimensionar (ou segure SHIFT)"
+        :title='t("toolbar.aspect")'
       >
         <component :is="editorStore.aspectLocked ? Lock : Unlock" :size="16" />
       </button>
@@ -154,16 +155,29 @@ const onImportFile = async (e: Event) => {
 
     <div class="spacer"></div>
 
+    <div class="lang" :title="t('toolbar.language')">
+      <button
+        v-for="l in LOCALES"
+        :key="l.code"
+        class="lang-btn"
+        :class="{ on: locale === l.code }"
+        :aria-label="l.label"
+        @click="setLocale(l.code)"
+      >
+        {{ l.short }}
+      </button>
+    </div>
+
     <button class="btn btn-ghost wiki-btn" @click="showWiki = true">
-      <BookOpen :size="16" /> Wiki
+      <BookOpen :size="16" /> {{ t("toolbar.wiki") }}
     </button>
 
     <div class="actions">
       <button class="btn btn-primary" @click="showPack = true">
-        <Package :size="16" /> Baixar pacote
+        <Package :size="16" /> {{ t("toolbar.download") }}
       </button>
       <button class="btn btn-ghost" @click="exportJsonUi">
-        <Braces :size="16" /> JSON UI
+        <Braces :size="16" /> {{ t("toolbar.jsonUi") }}
       </button>
       <div class="seg">
         <button class="btn btn-ghost seg-item" @click="exportScript('ts')">TS</button>
@@ -173,17 +187,17 @@ const onImportFile = async (e: Event) => {
         <FileCode2 :size="16" /> server_form
       </button>
       <button class="btn btn-ghost" @click="openProject">
-        <FolderOpen :size="16" /> Abrir projeto
+        <FolderOpen :size="16" /> {{ t("toolbar.openProject") }}
       </button>
       <button class="btn btn-ghost" @click="saveProject">
-        <Save :size="16" /> Salvar
+        <Save :size="16" /> {{ t("toolbar.save") }}
       </button>
       <button
         class="btn btn-ghost"
         @click="triggerImport"
-        title="Importar um arquivo JSON UI do Minecraft para a tela ativa"
+        :title='t("toolbar.importJsonUiTitle")'
       >
-        <FileCode2 :size="16" /> Importar JSON UI
+        <FileCode2 :size="16" /> {{ t("toolbar.importJsonUi") }}
       </button>
     </div>
 
@@ -394,6 +408,36 @@ const onImportFile = async (e: Event) => {
   .btn {
     padding: 7px 10px;
   }
+}
+.lang {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+.lang-btn {
+  min-width: 30px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.lang-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.lang-btn.on {
+  background: var(--accent);
+  color: #fff;
 }
 .wiki-btn {
   color: var(--accent);

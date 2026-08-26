@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "../../i18n";
 /**
  * Modal de exportação do pacote: configurações, pré-visualização do script e
  * download do .mcaddon pronto para o Minecraft.
@@ -94,7 +95,7 @@ const download = async (extension: "mcaddon" | "zip") => {
       <header>
         <div class="title">
           <Package :size="17" />
-          <h3>Exportar pacote</h3>
+          <h3>{{ t("pack.title") }}</h3>
         </div>
         <button class="close" @click="emit('close')"><X :size="17" /></button>
       </header>
@@ -102,15 +103,15 @@ const download = async (extension: "mcaddon" | "zip") => {
       <div class="body">
         <!-- Configurações -->
         <section class="panel">
-          <h4>Pacote</h4>
+          <h4>{{ t("pack.section") }}</h4>
           <div class="grid">
             <label class="field">
-              <span>Nome do pacote</span>
+              <span>{{ t("pack.name") }}</span>
               <input v-model="editorStore.packName" spellcheck="false" />
             </label>
 
             <label class="field">
-              <span>Item que abre o menu</span>
+              <span>{{ t("pack.trigger") }}</span>
               <input
                 v-model="editorStore.triggerItem"
                 list="trigger-items"
@@ -122,7 +123,7 @@ const download = async (extension: "mcaddon" | "zip") => {
             </label>
 
             <label class="field">
-              <span>Versão da API de script</span>
+              <span>{{ t("pack.api") }}</span>
               <select v-model="editorStore.scriptApi">
                 <option value="1.x">1.x — @minecraft/server 1.11.0</option>
                 <option value="2.x">2.x — @minecraft/server 2.0.0</option>
@@ -130,29 +131,28 @@ const download = async (extension: "mcaddon" | "zip") => {
             </label>
           </div>
           <p class="hint">
-            Se o script não carregar no jogo, a causa mais comum é a versão da
-            API. Troque aqui e gere de novo.
+{{ t("pack.apiHint") }}
           </p>
         </section>
 
         <!-- Telas -->
         <section class="panel">
-          <h4>Telas ({{ editorStore.screens.length }})</h4>
+          <h4>{{ t("pack.screens", { count: editorStore.screens.length }) }}</h4>
           <div class="screens">
             <div v-for="s in totalButtons" :key="s.namespace" class="screen-row">
               <code class="flag">{{ s.name }}</code>
-              <span class="meta">{{ s.elements }} elementos · {{ s.buttons }} botões</span>
+              <span class="meta">{{ s.elements }} {{ t("pack.elements") }} · {{ s.buttons }} {{ t("pack.buttons") }}</span>
               <code class="ns">{{ s.namespace }}.json</code>
             </div>
           </div>
           <div v-if="editorStore.screenNameConflicts.length" class="warn">
             <AlertTriangle :size="14" />
-            <span>
-              <b>{{ editorStore.screenNameConflicts[0].a }}</b> é trecho de
-              <b>{{ editorStore.screenNameConflicts[0].b }}</b
-              >. No jogo as duas telas apareceriam sobrepostas — renomeie antes
-              de exportar.
-            </span>
+            <span>{{
+              t("pack.conflict", {
+                a: editorStore.screenNameConflicts[0].a,
+                b: editorStore.screenNameConflicts[0].b,
+              })
+            }}</span>
           </div>
         </section>
 
@@ -162,7 +162,7 @@ const download = async (extension: "mcaddon" | "zip") => {
             <h4>scripts/main.js</h4>
             <button class="mini" :class="{ ok: copied }" @click="copyScript">
               <component :is="copied ? Check : Copy" :size="13" />
-              {{ copied ? "Copiado" : "Copiar" }}
+              {{ copied ? t("pack.copied") : t("pack.copy") }}
             </button>
           </div>
           <pre class="code"><code>{{ scriptPreview }}</code></pre>
@@ -170,7 +170,7 @@ const download = async (extension: "mcaddon" | "zip") => {
 
         <!-- Resultado -->
         <section v-if="result" class="panel">
-          <h4>Gerado ({{ result.files.length }} arquivos)</h4>
+          <h4>{{ t("pack.generated", { count: result.files.length }) }}</h4>
           <div v-for="w in result.warnings" :key="w" class="warn">
             <AlertTriangle :size="14" /><span>{{ w }}</span>
           </div>
@@ -178,14 +178,13 @@ const download = async (extension: "mcaddon" | "zip") => {
         </section>
 
         <div v-if="buildError" class="error">
-          <AlertTriangle :size="15" /> Falha ao gerar o pacote: {{ buildError }}
+          <AlertTriangle :size="15" /> {{ t("pack.buildFailed", { reason: buildError }) }}
         </div>
       </div>
 
       <footer>
         <p class="foot-hint">
-          Dois cliques no <code>.mcaddon</code> instalam o resource pack e o
-          behavior pack. Ative os dois no mundo e ligue as Beta APIs.
+{{ t("pack.footHint") }}
         </p>
         <div class="foot-actions">
           <button class="btn ghost" :disabled="building" @click="download('zip')">
@@ -193,7 +192,7 @@ const download = async (extension: "mcaddon" | "zip") => {
           </button>
           <button class="btn primary" :disabled="building" @click="download('mcaddon')">
             <component :is="building ? Loader2 : Download" :size="15" :class="{ spin: building }" />
-            {{ building ? "Gerando…" : "Baixar .mcaddon" }}
+            {{ building ? t("pack.generating") : t("pack.downloadAddon") }}
           </button>
         </div>
       </footer>

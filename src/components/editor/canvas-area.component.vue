@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "../../i18n";
 import { onMounted, onUnmounted, ref, computed } from "vue";
 import { ZoomIn, ZoomOut, Maximize2 } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
@@ -122,7 +123,7 @@ onUnmounted(() => {
         @click.self="editorStore.selectElement(null)"
       >
         <p v-if="editorStore.elements.length === 0" class="empty-text">
-          O canvas está vazio. Adicione um Painel para começar.
+          {{ t("canvas.empty") }}
         </p>
         <CanvasNode
           v-for="el in editorStore.elements"
@@ -133,15 +134,15 @@ onUnmounted(() => {
     </div>
 
     <div class="zoom-bar">
-      <button title="Menos zoom" @click="editorStore.zoomOut()"><ZoomOut :size="15" /></button>
-      <button class="pct" title="Ajustar à janela" @click="editorStore.zoomToFit()">
+      <button :title='t("canvas.zoomOut")' @click="editorStore.zoomOut()"><ZoomOut :size="15" /></button>
+      <button class="pct" :title='t("canvas.fit")' @click="editorStore.zoomToFit()">
         {{ Math.round(editorStore.zoom * 100) }}%
       </button>
-      <button title="Mais zoom" @click="editorStore.zoomIn()"><ZoomIn :size="15" /></button>
+      <button :title='t("canvas.zoomIn")' @click="editorStore.zoomIn()"><ZoomIn :size="15" /></button>
       <button
         class="fit"
         :class="{ on: editorStore.zoomMode === 'fit' }"
-        title="Acompanhar o tamanho da janela"
+        :title='t("canvas.follow")'
         @click="editorStore.zoomToFit()"
       >
         <Maximize2 :size="14" />

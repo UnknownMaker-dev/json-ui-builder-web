@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "../../i18n";
 import { ref } from "vue";
 import { Boxes, FolderTree, ImageUp, CornerLeftUp } from "lucide-vue-next";
 import { useEditorStore } from "../../stores/editor.store";
@@ -20,7 +21,7 @@ const isDisabled = (type: UIElementType) =>
 
 const handleAddElement = (type: UIElementType) => {
   if (isDisabled(type)) {
-    alert("O primeiro elemento do projeto deve ser um container (Panel, Stack, etc.)!");
+    alert(t("left.needContainer"));
     return;
   }
   editorStore.addElement(type);
@@ -86,7 +87,7 @@ const onBackgroundFile = async (e: Event) => {
     };
     editorStore.addRootElement(element, true);
   } catch (err) {
-    alert("Não consegui importar a imagem: " + (err instanceof Error ? err.message : err));
+    alert(t("left.imageFailed", { reason: String(err instanceof Error ? err.message : err) }));
   } finally {
     importing.value = false;
   }
@@ -96,7 +97,7 @@ const onBackgroundFile = async (e: Event) => {
 <template>
   <aside class="sidebar-left">
     <div class="section">
-      <h2><Boxes :size="14" /> Adicionar</h2>
+      <h2><Boxes :size="14" /> {{ t("left.add") }}</h2>
       <div class="toolbox">
         <button
           v-for="tool in tools"
@@ -112,7 +113,7 @@ const onBackgroundFile = async (e: Event) => {
 
       <button class="bg-btn" :disabled="importing" @click="pickBackground">
         <ImageUp :size="15" />
-        {{ importing ? "Importando…" : "Importar imagem de fundo" }}
+        {{ importing ? t("left.importing") : t("left.importBackground") }}
       </button>
       <input
         ref="bgInput"
@@ -124,9 +125,9 @@ const onBackgroundFile = async (e: Event) => {
     </div>
 
     <div class="section explorer-section">
-      <h2><FolderTree :size="14" /> Explorer</h2>
+      <h2><FolderTree :size="14" /> {{ t("left.explorer") }}</h2>
       <div v-if="editorStore.elements.length === 0" class="empty-explorer">
-        Nenhum elemento no projeto.
+        {{ t("left.empty") }}
       </div>
       <ul class="explorer-tree" v-else>
         <ExplorerItem
@@ -147,7 +148,7 @@ const onBackgroundFile = async (e: Event) => {
         @drop.prevent="onDropRoot"
       >
         <CornerLeftUp :size="14" />
-        soltar aqui para tirar do container
+        {{ t("left.dropToRoot") }}
       </div>
     </div>
   </aside>

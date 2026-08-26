@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "../../i18n";
 import { assetUrl } from "../../utils/asset-url";
 /**
  * Seletor visual de texturas: presets embarcados (por estilo) + texturas do
@@ -11,6 +12,7 @@ import {
   getCustomTextures,
   addCustomTexture,
   removeCustomTexture,
+  CUSTOM_STYLE,
   type TextureEntry,
 } from "../../utils/presets";
 
@@ -36,7 +38,7 @@ onMounted(async () => {
 
 const allGroups = computed(() => {
   const merged: Record<string, TextureEntry[]> = {};
-  if (custom.value.length) merged["Minhas Texturas"] = custom.value;
+  if (custom.value.length) merged[CUSTOM_STYLE] = custom.value;
   Object.assign(merged, groups.value);
   const q = search.value.trim().toLowerCase();
   if (!q) return merged;
@@ -69,17 +71,19 @@ const doRemove = (entry: TextureEntry) => {
 };
 
 const styleLabel = (style: string) =>
-  style.replace(/_ore-ui_style$/, "").replace(/_/g, " ");
+  style === CUSTOM_STYLE
+    ? t("tex.myTextures")
+    : style.replace(/_ore-ui_style$/, "").replace(/_/g, " ");
 </script>
 
 <template>
   <div class="picker-overlay" @click.self="emit('close')">
     <div class="picker">
       <header>
-        <h3>Selecionar textura</h3>
+        <h3>{{ t("tex.title") }}</h3>
         <div class="search-wrap">
           <Search :size="15" class="search-icon" />
-          <input v-model="search" placeholder="Buscar textura..." class="search" />
+          <input v-model="search" :placeholder='t("tex.search")' class="search" />
         </div>
         <button class="close" @click="emit('close')"><X :size="18" /></button>
       </header>
@@ -95,11 +99,11 @@ const styleLabel = (style: string) =>
           <input type="file" accept=".json" @change="onJson" hidden />
         </label>
         <button class="up-btn" :disabled="!pngInput" @click="doUpload">
-          <Upload :size="14" /> Enviar
+          <Upload :size="14" /> {{ t("tex.upload") }}
         </button>
       </div>
 
-      <div v-if="loading" class="loading">Carregando presets…</div>
+      <div v-if="loading" class="loading">{{ t("tex.loading") }}</div>
       <div v-else class="groups">
         <section v-for="(list, style) in allGroups" :key="style">
           <h4>{{ styleLabel(String(style)) }}</h4>
@@ -119,7 +123,7 @@ const styleLabel = (style: string) =>
                 v-if="tex.custom"
                 class="del"
                 @click.stop="doRemove(tex)"
-                title="Remover"
+                :title='t("tex.remove")'
               >
                 <Trash2 :size="12" />
               </span>

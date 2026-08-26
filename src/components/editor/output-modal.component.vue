@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "../../i18n";
 /** Modal genérico que exibe código gerado (JSON UI / script) com copiar/baixar. */
 import { ref } from "vue";
 import { Copy, Download, X, Check } from "lucide-vue-next";
@@ -38,9 +39,9 @@ const download = () => {
         <div class="actions">
           <button :class="{ ok: copied }" @click="copy">
             <component :is="copied ? Check : Copy" :size="15" />
-            {{ copied ? "Copiado" : "Copiar" }}
+            {{ copied ? t("out.copied") : t("out.copy") }}
           </button>
-          <button @click="download"><Download :size="15" /> Baixar</button>
+          <button @click="download"><Download :size="15" /> {{ t("out.download") }}</button>
           <button class="close" @click="emit('close')"><X :size="17" /></button>
         </div>
       </header>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "../../i18n";
 /**
  * Editor de bindings do elemento selecionado. Bindings ligam propriedades do
  * elemento a valores dinâmicos do Minecraft (ver docs de JSON UI). Cada binding
@@ -36,11 +37,11 @@ const removeBinding = (i: number) => {
 <template>
   <div class="bindings">
     <div class="head">
-      <label>Bindings do elemento</label>
-      <button class="add" @click="addBinding"><Plus :size="13" /> Adicionar</button>
+      <label>{{ t("bind.title") }}</label>
+      <button class="add" @click="addBinding"><Plus :size="13" /> {{ t("bind.add") }}</button>
     </div>
 
-    <div v-if="!bindings.length" class="empty">Nenhum binding.</div>
+    <div v-if="!bindings.length" class="empty">{{ t("bind.empty") }}</div>
 
     <div v-for="(b, i) in bindings" :key="i" class="binding-card">
       <div class="row">
