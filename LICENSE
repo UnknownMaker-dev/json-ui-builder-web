@@ -2,15 +2,16 @@ MIT License
 
 Copyright (c) 2026 UnknownMaker-dev
 
-ESCOPO / SCOPE
-Esta licença cobre APENAS o código original deste repositório. Ela não cobre, e
-não pode cobrir, os componentes de terceiros descritos em NOTICE.md — em
-particular as partes derivadas do projeto SebTheSigma/JSON-UI-Maker, que é
-publicado sem licença, e as texturas em public/presets/, de origem não
-verificada. Veja NOTICE.md antes de reutilizar este repositório.
-
+SCOPE
 This license covers ONLY the original code in this repository. It does not, and
-cannot, cover the third-party components described in NOTICE.md.
+cannot, cover the third-party components described in NOTICE.md — in particular
+the parts derived from the SebTheSigma/JSON-UI-Maker project, which is published
+with no license, and the textures in public/presets/, whose origin is
+unverified. Read NOTICE.md before reusing this repository.
+
+ESCOPO
+Esta licença cobre APENAS o código original deste repositório. Ela não cobre, e
+não pode cobrir, os componentes de terceiros descritos em NOTICE.md.
 
 ---
 

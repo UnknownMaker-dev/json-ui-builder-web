@@ -1,35 +1,43 @@
 # JSON UI Builder
 
-Editor visual para criar interfaces do **Minecraft Bedrock** e baixá-las como um
-addon pronto para instalar — resource pack, behavior pack e script, num arquivo
-só.
+<div align="center">
 
-Você desenha arrastando elementos numa tela; o editor cuida do JSON UI, das
-coordenadas, do nine-slice, das texturas e do script que abre o menu no jogo.
+[![English](https://img.shields.io/badge/lang-English-2b6cb0?style=for-the-badge)](README.md)
+[![Português&nbsp;(BR)](https://img.shields.io/badge/lang-Portugu%C3%AAs%20%28BR%29-4a5568?style=for-the-badge)](README.pt-BR.md)
 
-![Exemplo de tela montada no editor](docs/img/exemplo-ffa.png)
+</div>
 
----
+Visual editor for building **Minecraft Bedrock** interfaces and downloading them
+as a ready-to-install addon — resource pack, behavior pack and script, in a
+single file.
 
-## Índice
+You design by dragging elements onto a canvas; the editor handles the JSON UI,
+the coordinates, the nine-slice, the textures and the script that opens the menu
+in-game.
 
-- [Rodando o projeto](#rodando-o-projeto)
-- [Deixando o projeto no ar](#deixando-o-projeto-no-ar)
-- [Usando o editor](#usando-o-editor)
-- [Baixando o pacote](#baixando-o-pacote)
-- [Instalando no Minecraft](#instalando-no-minecraft)
-- [O script gerado](#o-script-gerado)
-- [Como funciona por dentro](#como-funciona-por-dentro)
-- [Quando algo não aparece](#quando-algo-não-aparece)
-- [Limitações conhecidas](#limitações-conhecidas)
-- [Estrutura do repositório](#estrutura-do-repositório)
-- [Origem, créditos e uso](#origem-créditos-e-uso)
+![A screen built in the editor](docs/img/exemplo-ffa.png)
 
 ---
 
-## Rodando o projeto
+## Contents
 
-Precisa de [Bun](https://bun.sh). Node também funciona trocando `bun` por `npm`.
+- [Running the project](#running-the-project)
+- [Hosting it online](#hosting-it-online)
+- [Using the editor](#using-the-editor)
+- [Downloading the pack](#downloading-the-pack)
+- [Installing in Minecraft](#installing-in-minecraft)
+- [The generated script](#the-generated-script)
+- [How it works under the hood](#how-it-works-under-the-hood)
+- [When nothing shows up](#when-nothing-shows-up)
+- [Known limitations](#known-limitations)
+- [Repository layout](#repository-layout)
+- [Origin, credits and usage](#origin-credits-and-usage)
+
+---
+
+## Running the project
+
+Requires [Bun](https://bun.sh). Node works too — swap `bun` for `npm`.
 
 ```bash
 git clone https://github.com/UnknownMaker-dev/json-ui-builder-web
@@ -38,149 +46,151 @@ bun install
 bun run dev
 ```
 
-Abre em `http://localhost:5173`.
+Opens at `http://localhost:5173`.
 
-| comando | o que faz |
+| command | what it does |
 |---|---|
-| `bun run dev` | servidor de desenvolvimento, com recarga automática |
-| `bun run build` | gera o site estático em `dist/` |
-| `bun run preview` | serve o `dist/` para conferir antes de publicar |
+| `bun run dev` | development server with hot reload |
+| `bun run build` | builds the static site into `dist/` |
+| `bun run preview` | serves `dist/` so you can check it before publishing |
 
-O editor é inteiramente client-side: **não há backend, banco nem upload**. Tudo
-acontece no navegador, e o pacote é montado na sua máquina.
+The editor is entirely client-side: **no backend, no database, no uploads**.
+Everything happens in the browser, and the pack is assembled on your machine.
 
-## Deixando o projeto no ar
+## Hosting it online
 
-O repositório já vem com o workflow de publicação no GitHub Pages
-(`.github/workflows/deploy.yml`). Para ativar:
+The repository ships with a GitHub Pages workflow
+(`.github/workflows/deploy.yml`). To turn it on:
 
-1. No GitHub: **Settings → Pages → Source: GitHub Actions**.
-2. Dê push na `master`.
+1. On GitHub: **Settings → Pages → Source: GitHub Actions**.
+2. Push to `master`.
 
-O site sobe em `https://<usuário>.github.io/<repositório>/` e é republicado a
-cada push.
+The site goes live at `https://<user>.github.io/<repository>/` and is
+republished on every push.
 
-O Pages serve o projeto numa subpasta, então o build usa a variável `BASE`:
+Pages serves the project from a subfolder, so the build reads a `BASE` variable:
 
 ```bash
 BASE=/json-ui-builder-web/ bun run build
 ```
 
-O workflow define isso sozinho a partir do nome do repositório. Localmente,
-`bun run dev` continua em `/`. Se preferir outro host (Vercel, Netlify, Cloudflare
-Pages), basta apontar para `bun run build` e publicar a pasta `dist/` — sem
-`BASE`, porque esses servem na raiz.
+The workflow sets that automatically from the repository name. Locally,
+`bun run dev` still runs at `/`. For another host (Vercel, Netlify, Cloudflare
+Pages), just point it at `bun run build` and publish the `dist/` folder — no
+`BASE` needed, since those serve from the root.
 
-> Os caminhos de textura são gravados no projeto como `/presets/...` e só viram
-> URL completa na hora de usar. Um arquivo de projeto salvo continua abrindo em
-> qualquer endereço.
+> Texture paths are stored in the project file as `/presets/...` and only become
+> full URLs at the moment of use. A saved project file keeps working at any
+> address.
 
-## Usando o editor
+## Using the editor
 
-### Telas (abas)
+### Screens (tabs)
 
-Cada aba é uma tela, e vira **um arquivo JSON UI** dentro do pacote.
+Each tab is a screen, and becomes **one JSON UI file** inside the pack.
 
-O **nome da aba não é enfeite**: é o identificador que o script manda no título
-do formulário e que o jogo usa para escolher qual tela mostrar. Duplo clique
-renomeia.
+The **tab name is not decoration**: it is the identifier the script sends as the
+form title, and what the game uses to pick which screen to show. Double-click to
+rename.
 
-> Se o nome de uma tela for trecho do nome de outra (`Menu` e `Menu Loja`), as
-> duas abrem sobrepostas no jogo — o editor avisa antes de você exportar.
+> If one screen's name is a substring of another's (`Menu` and `Menu Shop`),
+> both open on top of each other in-game — the editor warns you before you
+> export.
 
-### Elementos
+### Elements
 
-| elemento | vira, no JSON UI | contém filhos |
+| element | becomes, in JSON UI | holds children |
 |---|---|---|
-| **Panel** | `panel`, ou `image` se tiver textura | sim |
-| **Stack Panel** | `stack_panel` | sim |
-| **Collection Panel** | `collection_panel` | sim |
-| **Scrolling Panel** | `stack_panel` + `common.scrolling_panel` | sim |
-| **Image** | `image` | sim |
-| **Button** | herda `common_buttons.light_content_button` | não |
-| **Label** | `label` | não |
+| **Panel** | `panel`, or `image` when it has a texture | yes |
+| **Stack Panel** | `stack_panel` | yes |
+| **Collection Panel** | `collection_panel` | yes |
+| **Scrolling Panel** | `stack_panel` + `common.scrolling_panel` | yes |
+| **Image** | `image` | yes |
+| **Button** | inherits `common_buttons.light_content_button` | no |
+| **Label** | `label` | no |
 
-- **Arrastar e redimensionar** direto no canvas, com 8 alças. `SHIFT` mantém a
-  proporção, `ALT` redimensiona a partir do centro.
-- **Setas** movem 1px (`SHIFT` = 10px). Dentro de um stack panel, elas
-  reordenam num eixo e mudam o alinhamento no outro.
+- **Drag and resize** directly on the canvas, with 8 handles. `SHIFT` keeps the
+  aspect ratio, `ALT` resizes from the center.
+- **Arrow keys** move by 1px (`SHIFT` = 10px). Inside a stack panel they reorder
+  along one axis and change alignment on the other.
 - **Ctrl+Z / Ctrl+Y**, **Ctrl+C / Ctrl+V**, `Delete`.
-- **Explorer**: arraste para reordenar ou trocar de pai. Solte no miolo de um
-  container para entrar nele, nas bordas para inserir antes/depois, e na área
-  tracejada embaixo da árvore para tirar do container.
-- **Zoom**: ajusta-se à janela sozinho; `Ctrl` + roda do mouse ou os botões no
-  canto controlam manualmente.
+- **Explorer**: drag to reorder or reparent. Drop on the middle of a container to
+  move inside it, on the edges to insert before/after, and on the dashed area
+  below the tree to pull an element out of its container.
+- **Zoom**: fits the window on its own; `Ctrl` + mouse wheel or the corner
+  buttons control it manually.
 
 ### Stack panel
 
-Diferente de um painel comum, um stack panel posiciona os filhos sozinho.
-X e Y ficam desabilitados dentro dele — quem manda são:
+Unlike a plain panel, a stack panel positions its children itself. X and Y are
+disabled inside it — what governs instead:
 
-- **Alinhar na pilha** (no filho) — no eixo transversal: esquerda/centro/direita
-  numa pilha vertical, topo/meio/base numa horizontal.
-- **Distribuir os filhos** (no stack) — o bloco inteiro no eixo da pilha.
-- **Espaçamento** e **Recuo interno** (no stack), **Margem antes** (no filho).
+- **Align in stack** (on the child) — the cross axis: left/center/right in a
+  vertical stack, top/middle/bottom in a horizontal one.
+- **Distribute children** (on the stack) — the whole block along the stack axis.
+- **Spacing** and **Inner padding** (on the stack), **Margin before** (on the
+  child).
 
-> JSON UI não tem `margin` nem `gap`. O editor gera painéis vazios invisíveis
-> entre os itens para produzir o espaço.
+> JSON UI has no `margin` and no `gap`. The editor emits invisible empty panels
+> between items to produce the space.
 
-### Texturas
+### Textures
 
-- **Seletor** com cinco conjuntos embarcados; escolher uma textura adota também
-  o nine-slice que vem com ela.
-- **Importar imagem de fundo** sobe um PNG/JPG e cria o elemento atrás dos
-  outros, na proporção original.
-- Suas texturas ficam no navegador e vão junto no pacote.
+- **Picker** with five bundled sets; choosing a texture also adopts the
+  nine-slice that ships with it.
+- **Import background image** uploads a PNG/JPG and creates the element behind
+  the others, at its original aspect ratio.
+- Your own textures live in the browser and travel with the pack.
 
-### Salvando
+### Saving
 
-O rascunho é guardado no navegador automaticamente. Para não depender disso,
-**Salvar** baixa um `.json` com todas as telas, e **Abrir projeto** o restaura.
+A draft is kept in the browser automatically. To not depend on that, **Save**
+downloads a `.json` with every screen, and **Open project** restores it.
 
-## Baixando o pacote
+## Downloading the pack
 
-**Baixar pacote** abre a janela de exportação, onde você define:
+**Download pack** opens the export dialog, where you set:
 
-- **Nome do pacote** — como aparece na lista de recursos do jogo.
-- **Item que abre o menu** — `minecraft:stick` por padrão.
-- **Versão da API de script** — 2.x por padrão; troque para 1.x se o script não
-  carregar na sua versão do jogo.
+- **Pack name** — how it appears in the game's resource list.
+- **Item that opens the menu** — `minecraft:stick` by default.
+- **Script API version** — 2.x by default; switch to 1.x if the script fails to
+  load on your game version.
 
-A mesma janela mostra o `main.js` que será gerado, antes de baixar.
+The same dialog shows the `main.js` that will be generated, before you download.
 
-Sai um `.mcaddon` (ou `.zip`, se preferir) com:
+Out comes a `.mcaddon` (or a `.zip`, if you prefer) containing:
 
 ```
-<pacote>_RP/                      resource pack
+<pack>_RP/                        resource pack
 ├── manifest.json
 ├── ui/
-│   ├── _ui_defs.json             registra os arquivos novos
-│   ├── server_form.json          roteia: qual tela mostrar para cada título
-│   └── <pacote>/<tela>.json      uma por aba
-├── textures/ui/<pacote>/         PNGs + .json de nine-slice
+│   ├── _ui_defs.json             registers the new files
+│   ├── server_form.json          routes: which screen for which title
+│   └── <pack>/<screen>.json      one per tab
+├── textures/ui/<pack>/           PNGs + nine-slice .json
 └── LEIA-ME.txt
 
-<pacote>_BP/                      behavior pack
+<pack>_BP/                        behavior pack
 ├── manifest.json
-├── scripts/main.js               abre as telas
+├── scripts/main.js               opens the screens
 └── LEIA-ME.txt
 ```
 
-Os UUID são estáveis entre exportações e a versão sobe o patch a cada uma: o
-jogo reconhece como **atualização do mesmo pacote**, sem encher a lista de
-cópias.
+UUIDs stay stable across exports and the patch version bumps each time: the game
+recognises it as an **update to the same pack**, instead of filling the list
+with copies.
 
-## Instalando no Minecraft
+## Installing in Minecraft
 
-1. Dois cliques no `.mcaddon` — o jogo importa os dois packs.
-2. Nas configurações do mundo, ative **os dois**: `<pacote>_RP` e `<pacote>_BP`.
-3. Ligue **Beta APIs** (Experimentos). O script não roda sem isso.
-4. Entre no mundo e use o item configurado com o botão direito.
+1. Double-click the `.mcaddon` — the game imports both packs.
+2. In the world settings, enable **both**: `<pack>_RP` and `<pack>_BP`.
+3. Turn on **Beta APIs** (Experiments). The script will not run without it.
+4. Enter the world and right-click with the configured item.
 
-Preferindo instalar à mão, renomeie para `.zip` e extraia as duas pastas em
-`com.mojang/development_resource_packs` e `development_behavior_packs`.
+To install by hand, rename it to `.zip` and extract the two folders into
+`com.mojang/development_resource_packs` and `development_behavior_packs`.
 
-## O script gerado
+## The generated script
 
 ```js
 import { world, system } from "@minecraft/server";
@@ -211,7 +221,7 @@ function showScreen(player, name) {
     form.show(player).then((response) => {
         if (response.canceled) return;
         const clicked = screen.buttons[response.selection];
-        player.sendMessage("§aClicou em: §f" + clicked.text);
+        player.sendMessage("§aClicked: §f" + clicked.text);
     });
 }
 
@@ -221,28 +231,28 @@ world.afterEvents.itemUse.subscribe((event) => {
 });
 ```
 
-Duas regras ao editar:
+Two rules when editing it:
 
-- **O título tem que ser o nome da tela.** É por ele que o jogo escolhe o
-  desenho. Mudou num lado, mude no outro.
-- **A ordem dos botões é um contrato.** O botão N no editor responde pelo
-  N-ésimo `form.button(...)`. Inserir um no meio desloca todos os seguintes.
+- **The title must be the screen name.** That is how the game picks the artwork.
+  Change it on one side, change it on the other.
+- **Button order is a contract.** Button N in the editor answers for the Nth
+  `form.button(...)`. Inserting one in the middle shifts every one after it.
 
-Para navegar entre telas, chame `showScreen` de novo dentro do `then`:
+To navigate between screens, call `showScreen` again inside the `then`:
 
 ```js
-if (clicked.text === "Loja") showScreen(player, "Loja");
+if (clicked.text === "Shop") showScreen(player, "Shop");
 ```
 
-## Como funciona por dentro
+## How it works under the hood
 
-### O roteamento
+### Routing
 
-O Minecraft não deixa criar uma tela nova que o jogo abra sozinho — sempre se
-parasita uma tela existente. Aqui é o formulário do `ActionFormData`.
+Minecraft will not let you create a brand-new screen that the game opens on its
+own — you always parasite an existing one. Here it is the `ActionFormData` form.
 
-O servidor não conversa com a interface, mas manda o **título** do formulário, e
-a interface lê esse título. É esse o canal:
+The server does not talk to the interface, but it does send the form **title**,
+and the interface can read that title. That is the channel:
 
 ```json
 "bindings": [
@@ -253,101 +263,103 @@ a interface lê esse título. É esse o canal:
 ]
 ```
 
-Como JSON UI não tem operador "contém", usa-se **subtração de string**: tirar
-`'FFA'` do título mudou alguma coisa? Se mudou, o título continha aquilo — e a
-tela aparece.
+Since JSON UI has no "contains" operator, this uses **string subtraction**: did
+removing `'FFA'` from the title change anything? If it did, the title contained
+it — and the screen shows.
 
-### As coordenadas
+### Coordinates
 
-O editor trabalha em pixels absolutos, o Minecraft em unidades próprias. Todo
-valor é multiplicado por `UI_SCALAR` (0.36) na exportação, e cada tela vira um
-painel do tamanho do canvas ancorado no **centro**, para o desenho ficar
-centralizado em qualquer resolução.
+The editor works in absolute pixels, Minecraft in units of its own. Every value
+is multiplied by `UI_SCALAR` (0.36) on export, and each screen becomes a panel
+the size of the canvas anchored at the **center**, so the design stays centered
+at any resolution.
 
-### Os botões
+### Buttons
 
-Cada botão sai embrulhado num `collection_panel` que declara
-`collection_name: "form_buttons"`, contendo um controle que herda
-`common_buttons.light_content_button` com o `collection_index`.
+Each button is wrapped in a `collection_panel` declaring
+`collection_name: "form_buttons"`, holding a control that inherits
+`common_buttons.light_content_button` and carries the `collection_index`.
 
-Essa estrutura é específica: `collection_index` **só é aceito num controle do
-tipo `button`**, e `collection_name` **só num `collection_panel`**. Num painel
-comum o jogo recusa os dois com `Unknown property`, e o botão some da tela.
+That structure is specific: `collection_index` **is only accepted on a control of
+type `button`**, and `collection_name` **only on a `collection_panel`**. On a
+plain panel the game rejects both with `Unknown property`, and the button
+disappears from the screen.
 
-### O nine-slice
+### Nine-slice
 
-O `.json` que acompanha a textura é a fonte da verdade — ele traz as bordas
-reais da arte (frequentemente assimétricas, como `[2,2,2,5]`) e o `base_size`
-é lido do próprio PNG. Bordas que não cabem na imagem são descartadas com aviso,
-em vez de virarem borrão no jogo.
+The `.json` next to the texture is the source of truth — it carries the artwork's
+real borders (often asymmetric, like `[2,2,2,5]`) and `base_size` is read from
+the PNG itself. Borders that do not fit the image are dropped with a warning,
+rather than turning into a smear in-game.
 
-Há um guia prático de JSON UI em **[JSON-UI.md](JSON-UI.md)**, cobrindo tipos,
-herança, variáveis, unidades, âncoras, bindings e as armadilhas mais comuns.
+A hands-on JSON UI guide lives in **[JSON-UI.md](JSON-UI.md)** — types,
+inheritance, variables, units, anchors, bindings and the usual traps. *(Written
+in Portuguese.)*
 
-## Quando algo não aparece
+## When nothing shows up
 
-Ligue o **Content Log**: Configurações → Criador → *Content Log*. É a única
-mensagem de erro que o JSON UI dá.
+Turn on the **Content Log**: Settings → Creator → *Content Log*. It is the only
+error message JSON UI ever gives you.
 
-| sintoma | causa provável |
+| symptom | likely cause |
 |---|---|
-| Nada acontece ao usar o item | packs não ativados, ou Beta APIs desligadas |
-| O script não carrega | versão da API — troque 2.x ↔ 1.x e gere de novo |
-| Abre o formulário padrão | o título do script não bate com o nome da tela |
-| Um botão não aparece | o texto dele vem do script; botão sem texto fica invisível |
-| Botão clica no lugar errado | ordem dos botões diferente entre editor e script |
-| Textura faltando | o Content Log diz o caminho exato |
-| Duas telas sobrepostas | um nome de tela é trecho do outro |
+| Nothing happens when using the item | packs not enabled, or Beta APIs off |
+| The script does not load | API version — swap 2.x ↔ 1.x and export again |
+| The default form opens instead | the script title does not match the screen name |
+| A button does not appear | its text comes from the script; a button with no text is invisible |
+| Button clicks the wrong thing | button order differs between editor and script |
+| Missing texture | the Content Log names the exact path |
+| Two screens overlapping | one screen name is a substring of another |
 
-## Limitações conhecidas
+## Known limitations
 
-- **Enquanto o pack estiver ativo, formulários que não são seus abrem vazio.**
-  Rotear exige substituir `ui/server_form.json` inteiro, e ele agora só roteia.
-- Não há `toggle`, `slider`, `grid` nem `edit_box`.
-- `collection_panel` não repete conteúdo: os botões são posicionados à mão.
-  Listas dinâmicas exigiriam `factory`, ainda não implementado.
-- Reimportar um JSON UI exportado funciona, mas não devolve a estrutura exata.
-- Bindings personalizados podem ser escritos à mão, sem assistente.
+- **While the pack is active, forms that are not yours open empty.** Routing
+  requires replacing `ui/server_form.json` wholesale, and it now only routes.
+- No `toggle`, `slider`, `grid` or `edit_box`.
+- `collection_panel` does not repeat content: buttons are placed by hand.
+  Dynamic lists would need `factory`, not implemented yet.
+- Re-importing an exported JSON UI works, but does not return the exact tree.
+- Custom bindings can be written by hand, with no assistant.
 
-## Estrutura do repositório
+## Repository layout
 
 ```
 src/
 ├── components/
-│   ├── editor/        toolbar, abas, canvas, explorer, sidebars, modais
-│   └── elements/      como cada tipo é desenhado, e o nine-slice em canvas 2D
-├── stores/            estado (telas, seleção, histórico, zoom) em Pinia
-├── types/             modelo de elemento e de tela
-├── config/            UI_SCALAR e demais números de calibração
+│   ├── editor/        toolbar, tabs, canvas, explorer, sidebars, modals
+│   └── elements/      how each type is drawn, and nine-slice on a 2D canvas
+├── stores/            state (screens, selection, history, zoom) in Pinia
+├── types/             element and screen models
+├── config/            UI_SCALAR and the other calibration numbers
 └── utils/
-    ├── json-ui-exporter.ts    árvore → JSON UI
-    ├── json-ui-importer.ts    JSON UI → árvore
-    ├── json-ui-templates.ts   botão de formulário e roteador
-    ├── pack-builder.ts        monta o .mcaddon
-    ├── scripter.ts            gera o main.js
-    ├── nineslice.ts           recorte 9 fatias em canvas
-    └── project-file.ts        salvar e abrir projeto
+    ├── json-ui-exporter.ts    tree → JSON UI
+    ├── json-ui-importer.ts    JSON UI → tree
+    ├── json-ui-templates.ts   form button and router
+    ├── pack-builder.ts        assembles the .mcaddon
+    ├── scripter.ts            generates main.js
+    ├── nineslice.ts           9-slice cutting on canvas
+    └── project-file.ts        save and open project
 ```
 
-## Origem, créditos e uso
+## Origin, credits and usage
 
-Este editor é uma reescrita em Vue 3 de
+This editor is a Vue 3 rewrite of
 **[SebTheSigma/JSON-UI-Maker](https://github.com/SebTheSigma/JSON-UI-Maker)**,
-de onde vieram o algoritmo de conversão de coordenadas, os números de calibração
-e os templates de JSON UI. O crédito da abordagem é dele.
+which is where the coordinate conversion algorithm, the calibration numbers and
+the JSON UI templates came from. Credit for the approach goes to them.
 
-> **Leia [NOTICE.md](NOTICE.md) antes de reutilizar ou publicar este
-> repositório.** O projeto de origem **não declara licença**, o que legalmente
-> significa todos os direitos reservados — e nenhuma licença colocada aqui muda
-> isso. O NOTICE explica a situação e o que efetivamente resolve.
+> **Read [NOTICE.md](NOTICE.md) before reusing or republishing this
+> repository.** The upstream project **declares no license**, which legally means
+> all rights reserved — and no license added here changes that. NOTICE explains
+> the situation and what actually resolves it.
 
-O código original deste repositório está sob [MIT](LICENSE), com o escopo
-descrito no próprio arquivo.
+The original code in this repository is under [MIT](LICENSE), with the scope
+spelled out in the file itself.
 
-**Projeto não oficial.** Sem vínculo, patrocínio ou aprovação da Mojang Studios
-ou da Microsoft. "Minecraft" é marca registrada da Mojang Synergies AB. Nenhum
-código, asset ou binário do jogo é distribuído aqui — o projeto apenas gera
-arquivos no formato JSON UI.
+**Unofficial project.** Not affiliated with, sponsored by or approved by Mojang
+Studios or Microsoft. "Minecraft" is a trademark of Mojang Synergies AB. No game
+code, asset or binary is distributed here — the project only generates files in
+the JSON UI format.
 
-Fornecido "como está", sem garantia. Os pacotes gerados alteram a interface do
-jogo; faça backup dos seus mundos antes de testar.
+Provided "as is", without warranty. The generated packs modify the game's
+interface; back up your worlds before testing.
